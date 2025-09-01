@@ -1,0 +1,94 @@
+data:
+  input_csv: "Loan_data.csv"
+  status_column: "loan_status"
+  target_column: "flg_target"
+  allowed_status:
+    good:
+      - "Fully Paid"
+      - "Does not meet the credit policy. Status: Fully Paid"
+    bad:
+      - "Charged Off"
+      - "Default"
+      - "Late (31-120 days)"
+      - "Does not meet the credit policy. Status: Charged Off"
+  drop_missing_status: true
+  output_dir: "."
+  output_pca_lda_csv: "df_pca_lda.csv"
+  output_anova_csv: "df_anova.csv"
+
+cleaning:
+  enable_drop_null_columns: true
+  drop_null_threshold: 0.95
+  enable_drop_irrelevant_columns: true
+  drop_columns:
+    - member_id
+    - url
+    - desc
+    - disbursement_method
+    - payment_plan_start_date
+    - verification_status
+    - addr_state
+    - zip_code
+    - policy_code
+    - application_type
+  enable_drop_ex_post: true
+  drop_ex_post_columns:
+    - out_prncp
+    - out_prncp_inv
+    - total_pymnt_inv
+    - total_pymnt
+    - total_rec_int
+    - total_rec_late_fee
+    - recoveries
+    - collection_recovery_fee
+    - last_pymnt_d
+    - last_credit_pull_d
+    - recovery_ratio
+    - total_rec_prncp
+    - last_pymnt_amnt
+    - last_fico_range_low
+    - last_fico_range_high
+
+features:
+  derive:
+    enable_term_integer: true
+    enable_emp_length_months: true
+    enable_ratio_loan_income: true
+    enable_installment_pct_loan: true
+    enable_fico_avg: true
+    enable_revol_util_ratio: true
+
+selection:
+  filter_missing:
+    enable: true
+    threshold: 0.5
+    rescue_by_correlation: true
+    min_corr: 0.1
+    min_samples: 30
+  filter_cv:
+    enable: true
+    threshold: 0.1
+    rescue_by_correlation: true
+    min_corr: 0.1
+    min_samples: 30
+  pca:
+    enable: true
+    n_components: 35
+    plot_variance: false
+  lda_importance:
+    enable: true
+    importance_threshold: 0.05
+    plot_importance: false
+  anova:
+    enable: true
+    min_f_score: null
+    max_p_value: 0.05
+    top_n: null
+  correlation_redundancy:
+    enable: true
+    threshold: 0.6
+    plot_heatmap: false
+
+logging:
+  verbose: true
+
