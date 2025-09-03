@@ -369,10 +369,12 @@ def safe_drop_columns(df: pd.DataFrame, columns: List[str], verbose: bool = True
     present = [c for c in columns if c in df.columns]
     if present:
         if verbose:
-            print(f"[DROP] Dropping {len(present)} columns: {present}")
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
         return df.drop(columns=present)
     if verbose:
-        print("[DROP] No matching columns to drop.")
+        # Información detallada solo en log (manejo desde TFM_EDA.py)
+        pass
     return df
 
 
@@ -392,7 +394,8 @@ def build_binary_target(
     if status_column not in df.columns:
         raise ValueError(f"Status column '{status_column}' not found in DataFrame.")
     if verbose:
-        print(f"[TARGET] Building target '{target_column}' from '{status_column}'...")
+        # Información detallada solo en log (manejo desde TFM_EDA.py)
+        pass
     good_set = set(good_status or [])
     bad_set = set(bad_status or [])
     if drop_missing_status:
@@ -400,11 +403,13 @@ def build_binary_target(
         before = len(df)
         df = df.loc[mask].copy().reset_index(drop=True)
         if verbose:
-            print(f"[TARGET] Filtered by allowed statuses: {before} -> {len(df)} rows")
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
     df[target_column] = df[status_column].apply(lambda x: 1 if x in bad_set else (0 if x in good_set else np.nan))
     if verbose:
         pct_bad = df[target_column].mean()
-        print(f"[TARGET] '{target_column}' created. Bad rate={pct_bad:.3f}")
+        # Información detallada solo en log (manejo desde TFM_EDA.py)
+        pass
     return df
 
 
@@ -417,7 +422,8 @@ def term_to_int(series: pd.Series, verbose: bool = False) -> pd.Series:
     converted = series.astype(str).str.replace(' months', '', regex=False)
     converted = converted.str.extract(r"(\d+)")[0].astype(float).round().astype(float)
     if verbose:
-        print("[FEATURE] Converted 'term' to integers (nullable).")
+        # Información detallada solo en log (manejo desde TFM_EDA.py)
+        pass
     return converted
 
 
@@ -430,8 +436,235 @@ def emp_length_to_months(series: pd.Series, verbose: bool = False) -> pd.Series:
     s = s.str.replace(r"\D", "", regex=True).replace("", np.nan)
     months = s.astype(float) * 12.0
     if verbose:
-        print("[FEATURE] Derived 'emp_length_months'.")
+        # Información detallada solo en log (manejo desde TFM_EDA.py)
+        pass
     return months
+
+
+def intentar_conversion_numerica(series: pd.Series, verbose: bool = False) -> tuple:
+    """
+    Intenta convertir una serie a numérica y devuelve el resultado.
+
+    Args:
+        series: Serie de pandas a convertir
+        verbose: Si mostrar mensajes detallados
+
+    Returns:
+        tuple: (éxito_conversion, serie_convertida, tipo_original)
+    """
+    tipo_original = series.dtype
+    valores_no_nulos = series.dropna()
+
+    if len(valores_no_nulos) == 0:
+        return False, series, tipo_original
+
+    try:
+        # Intentar conversión a numérico
+        numeric_series = pd.to_numeric(valores_no_nulos, errors='coerce')
+
+        # Verificar si la conversión fue exitosa (sin NaN introducidos)
+        if not numeric_series.isna().any():
+            if verbose:
+                # Información detallada solo en log (manejo desde TFM_EDA.py)
+                pass
+            return True, numeric_series, tipo_original
+        else:
+            if verbose:
+                # Información detallada solo en log (manejo desde TFM_EDA.py)
+                pass
+            return False, series, tipo_original
+
+    except Exception as e:
+        if verbose:
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
+        return False, series, tipo_original
+
+
+def analizar_cardinalidad_categorica(series: pd.Series, max_unique: int = 20, max_concentration: float = 0.98, verbose: bool = False) -> dict:
+    """
+    Analiza las características de cardinalidad de una variable categórica.
+
+    Args:
+        series: Serie categórica a analizar
+        max_unique: Máximo número de valores únicos permitidos
+        max_concentration: Máxima concentración de un solo valor
+        verbose: Si mostrar análisis detallado
+
+    Returns:
+        dict: Resultado del análisis con métricas y decisión
+    """
+    valores_no_nulos = series.dropna()
+
+    if len(valores_no_nulos) == 0:
+        return {
+            'decision': 'descartar',
+            'razon': 'columna_vacia',
+            'n_unique': 0,
+            'concentracion': 0.0,
+            'valores_unicos': []
+        }
+
+    n_unique = valores_no_nulos.nunique()
+    valor_counts = valores_no_nulos.value_counts()
+    concentracion = valor_counts.iloc[0] / len(valores_no_nulos) if len(valor_counts) > 0 else 0.0
+
+    # Tomar decisión
+    if n_unique > max_unique:
+        decision = 'descartar'
+        razon = f'demasiados_valores_unicos_{n_unique}_>_max_{max_unique}'
+    elif concentracion > max_concentration:
+        decision = 'descartar'
+        razon = f'concentracion_excesiva_{concentracion:.1%}_>_max_{max_concentration:.1%}'
+    else:
+        decision = 'mantener'
+        razon = 'aprobada'
+
+    resultado = {
+        'decision': decision,
+        'razon': razon,
+        'n_unique': n_unique,
+        'concentracion': concentracion,
+        'valores_unicos': valor_counts.index.tolist()[:10]  # Primeros 10 valores
+    }
+
+    if verbose:
+        # Información detallada solo en log (manejo desde TFM_EDA.py)
+        pass
+
+    return resultado
+
+
+def proteger_int_rate(df: pd.DataFrame, variables_numericas: list, variables_categoricas: list,
+                     protected_var: str = 'int_rate', correlation_threshold: float = 0.7,
+                     verbose: bool = True, logger=None) -> dict:
+    """
+    Protege la variable int_rate asegurando que no sea eliminada y manejando
+    variables altamente correlacionadas con ella.
+
+    Args:
+        df: DataFrame con los datos
+        variables_numericas: Lista de variables numéricas
+        variables_categoricas: Lista de variables categóricas
+        protected_var: Variable a proteger (int_rate)
+        correlation_threshold: Umbral de correlación alta
+        verbose: Si mostrar logs detallados
+
+    Returns:
+        dict: Resultado con variables finales y análisis de correlación
+    """
+    def log_message(msg):
+        if logger:
+            logger.info(msg)
+        # No print a terminal, solo a log
+
+    if verbose:
+        log_message(f"\\n🛡️ PROTECCIÓN DE {protected_var.upper()}")
+        log_message("=" * 50)
+
+    # Verificar que int_rate existe
+    if protected_var not in df.columns:
+        if verbose:
+            log_message(f"⚠️ Variable protegida '{protected_var}' no encontrada en el dataset")
+        return {
+            'variables_numericas_finales': variables_numericas,
+            'variables_categoricas_finales': variables_categoricas,
+            'variables_correlacionadas_eliminadas': [],
+            'protected_variable_presente': False
+        }
+
+    if verbose:
+        log_message(f"✅ Variable protegida '{protected_var}' encontrada")
+
+    # Variables a analizar (numéricas + int_rate)
+    vars_para_correlacion = [v for v in variables_numericas if v in df.columns]
+    if protected_var not in vars_para_correlacion:
+        vars_para_correlacion.append(protected_var)
+
+    # Calcular matriz de correlación
+    try:
+        corr_matrix = df[vars_para_correlacion].corr()
+        corr_con_protegida = corr_matrix[protected_var].abs()
+
+        if verbose:
+            log_message(f"\\n📊 Análisis de correlación con {protected_var}:")
+            # Mostrar top 10 correlaciones más altas
+            top_corr = corr_con_protegida.sort_values(ascending=False).head(10)
+            for var, corr in top_corr.items():
+                if var != protected_var:
+                    log_message(f"  {var}: {corr:.3f}")
+
+        # Identificar variables altamente correlacionadas
+        variables_altamente_correlacionadas = []
+        for var in corr_con_protegida.index:
+            if var != protected_var and var in variables_numericas:
+                corr_abs = corr_con_protegida[var]
+                if corr_abs >= correlation_threshold:
+                    variables_altamente_correlacionadas.append({
+                        'variable': var,
+                        'correlacion': corr_abs,
+                        'decision': 'eliminar_por_correlacion_alta'
+                    })
+
+        if verbose and variables_altamente_correlacionadas:
+            log_message(f"\\n🚨 VARIABLES ALTAMENTE CORRELACIONADAS CON {protected_var} (>{correlation_threshold}):")
+            for item in variables_altamente_correlacionadas:
+                log_message(f"  ❌ {item['variable']}: {item['correlacion']:.3f}")
+
+        # También revisar variables categóricas que podrían estar relacionadas
+        variables_cat_correlacionadas = []
+        for cat_var in variables_categoricas:
+            if cat_var in df.columns:
+                # Para variables categóricas, podemos hacer un análisis básico
+                # Variables como 'grade' y 'sub_grade' están inherentemente relacionadas con int_rate
+                if cat_var in ['grade', 'sub_grade'] and protected_var in df.columns:
+                    variables_cat_correlacionadas.append({
+                        'variable': cat_var,
+                        'razon': f'relacion_inherente_con_{protected_var}'
+                    })
+
+        if verbose and variables_cat_correlacionadas:
+            log_message(f"\\n🎯 VARIABLES CATEGÓRICAS RELACIONADAS CON {protected_var}:")
+            for item in variables_cat_correlacionadas:
+                log_message(f"  ⚠️ {item['variable']}: {item['razon']}")
+
+        # Variables finales (mantener int_rate y eliminar correlacionadas)
+        variables_numericas_finales = [v for v in variables_numericas if v not in
+                                     [item['variable'] for item in variables_altamente_correlacionadas]]
+
+        # Asegurar que int_rate esté incluida
+        if protected_var not in variables_numericas_finales:
+            variables_numericas_finales.append(protected_var)
+
+        # Para categóricas, por ahora las mantenemos todas (luego el WOE/IV decidirá)
+        variables_categoricas_finales = variables_categoricas.copy()
+
+        if verbose:
+            log_message(f"\\n🎯 RESULTADO PROTECCIÓN {protected_var.upper()}:")
+            log_message(f"   ✅ {protected_var} PROTEGIDA Y MANTENIDA")
+            log_message(f"   ❌ Variables numéricas eliminadas por correlación: {len(variables_altamente_correlacionadas)}")
+            log_message(f"   📊 Variables numéricas finales: {len(variables_numericas_finales)}")
+            log_message(f"   📊 Variables categóricas finales: {len(variables_categoricas_finales)}")
+
+        return {
+            'variables_numericas_finales': variables_numericas_finales,
+            'variables_categoricas_finales': variables_categoricas_finales,
+            'variables_correlacionadas_eliminadas': variables_altamente_correlacionadas,
+            'variables_cat_relacionadas': variables_cat_correlacionadas,
+            'protected_variable_presente': True,
+            'correlacion_matrix': corr_matrix
+        }
+
+    except Exception as e:
+        if verbose:
+            log_message(f"❌ Error en análisis de correlación: {str(e)}")
+        return {
+            'variables_numericas_finales': variables_numericas,
+            'variables_categoricas_finales': variables_categoricas,
+            'variables_correlacionadas_eliminadas': [],
+            'error': str(e),
+            'protected_variable_presente': True
+        }
 
 
 def derive_features(df: pd.DataFrame, toggles: dict, verbose: bool = True) -> pd.DataFrame:
@@ -447,17 +680,21 @@ def derive_features(df: pd.DataFrame, toggles: dict, verbose: bool = True) -> pd
     if toggles.get('enable_ratio_loan_income', True) and all(c in df.columns for c in ['loan_amnt', 'annual_inc']):
         df['ratio_loan_income'] = df['loan_amnt'] / (df['annual_inc'].astype(float) + 1e-5)
         if verbose:
-            print("[FEATURE] Created 'ratio_loan_income'.")
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
     if toggles.get('enable_installment_pct_loan', True) and all(c in df.columns for c in ['installment', 'loan_amnt']):
         df['installment_pct_loan'] = df['installment'] / (df['loan_amnt'].astype(float) + 1e-5)
         if verbose:
-            print("[FEATURE] Created 'installment_pct_loan'.")
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
     if toggles.get('enable_fico_avg', True) and all(c in df.columns for c in ['fico_range_low', 'fico_range_high']):
         df['fico_avg'] = (df['fico_range_low'].astype(float) + df['fico_range_high'].astype(float)) / 2.0
         if verbose:
-            print("[FEATURE] Created 'fico_avg'.")
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
     if toggles.get('enable_revol_util_ratio', True) and all(c in df.columns for c in ['revol_bal', 'total_rev_hi_lim']):
         df['revol_util_ratio'] = df['revol_bal'].astype(float) / (df['total_rev_hi_lim'].astype(float) + 1e-5)
         if verbose:
-            print("[FEATURE] Created 'revol_util_ratio'.")
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
     return df
