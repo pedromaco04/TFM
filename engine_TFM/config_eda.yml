@@ -91,6 +91,28 @@ selection:
     threshold: 0.6
     plot_heatmap: false
 
+# Configuración para separación inteligente de variables
+separation:
+  max_unique_categorical: 20          # Máximo valores únicos para mantener categórica
+  max_concentration_categorical: 0.98 # Máxima concentración de un solo valor (98%)
+  enable_auto_numeric_conversion: true # Habilitar conversión automática a numérico
+  enable_categorical_filtering: true   # Habilitar filtrado de categóricas problemáticas
+
+# Configuración para selección de variables categóricas
+categorical_selection:
+  enable_chi_square: true             # Habilitar test Chi-square
+  enable_woe_iv: true                 # Habilitar cálculo WOE/IV
+  iv_threshold: 0.1                  # Umbral mínimo de Information Value
+  chi_square_threshold: 0.05         # Umbral p-value para Chi-square
+
+# Configuración para protección de int_rate
+int_rate_protection:
+  enable_protection: true             # Habilitar protección de int_rate
+  protected_variable: "int_rate"     # Variable a proteger
+  correlation_threshold: 0.7         # Umbral de correlación alta con int_rate
+  priority_over_correlated: true     # Priorizar int_rate sobre variables correlacionadas
+  force_include_int_rate: true       # Forzar inclusión de int_rate en resultados finales
+
 logging:
   verbose: true
 
