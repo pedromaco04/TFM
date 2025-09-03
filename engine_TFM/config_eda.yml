@@ -21,6 +21,8 @@ cleaning:
   drop_null_threshold: 0.95
   enable_drop_irrelevant_columns: true
   drop_columns:
+    - "Unnamed: 0"
+    - "Unnamed: 0.1"
     - member_id
     - url
     - desc

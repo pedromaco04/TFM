@@ -1,0 +1,28 @@
+# Requirements for TFM_EDA.py and TFM_MODELING.py
+# Core data science and machine learning packages
+
+# Data manipulation and analysis
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Machine learning (scikit-learn)
+scikit-learn>=1.1.0
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Statistical analysis
+scipy>=1.9.0
+
+# Network analysis (for correlation graphs)
+networkx>=2.8.0
+
+# Configuration file handling
+PyYAML>=6.0
+
+# Model persistence
+joblib>=1.2.0
+
+# Additional dependencies that might be needed
+# These are commonly used with the above packages

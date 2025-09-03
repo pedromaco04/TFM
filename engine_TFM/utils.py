@@ -415,7 +415,7 @@ def term_to_int(series: pd.Series, verbose: bool = False) -> pd.Series:
     if series.dtype == int or series.dtype == float:
         return series.astype(float).round().astype(int)
     converted = series.astype(str).str.replace(' months', '', regex=False)
-    converted = converted.str.extract(r"(\d+)")[0].astype(float).round().astype('Int64')
+    converted = converted.str.extract(r"(\d+)")[0].astype(float).round().astype(float)
     if verbose:
         print("[FEATURE] Converted 'term' to integers (nullable).")
     return converted
