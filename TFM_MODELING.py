@@ -99,7 +99,7 @@ def main() -> None:
     models_cfg = config.get("models", {})
     steps = [
         (True, "📥 Cargando datos"),
-        (True, "🔢 Preparando WOE"),
+        (True, "🔢 Preparando datos"),
         (models_cfg.get("enable_logit", True), "🤖 Entrenando LOGIT"),
         (models_cfg.get("enable_gnb", False), "🧮 Entrenando GNB"),
         (models_cfg.get("enable_svm_linear", False), "🧷 SVM Lineal"),
@@ -138,41 +138,66 @@ def main() -> None:
         time.sleep(0.1)
         print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step-1], suffix="Completado")
 
-        # Paso 2: Preparación con WOE
+        # Paso 2: Preparación de datos (WOE ya aplicado en EDA)
         print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step], suffix="")
         current_step += 1
         t0 = time.perf_counter()
+        
+        # Obtener todas las variables (excluyendo target)
         all_vars_pca_lda = df_pca_lda.columns.tolist()[:-1]
         all_vars_anova = df_anova.columns.tolist()[:-1]
-        cat_cols_pca_lda = [c for c in all_vars_pca_lda if df_pca_lda[c].dtype == "object"]
-        cat_cols_anova = [c for c in all_vars_anova if df_anova[c].dtype == "object"]
+        
+        # Detectar si ya hay variables WOE (del EDA)
+        woe_vars_pca_lda = [c for c in all_vars_pca_lda if c.endswith('_woe')]
+        woe_vars_anova = [c for c in all_vars_anova if c.endswith('_woe')]
+        
+        # Variables categóricas originales (sin _woe)
+        cat_cols_pca_lda = [c for c in all_vars_pca_lda if df_pca_lda[c].dtype == "object" and not c.endswith('_woe')]
+        cat_cols_anova = [c for c in all_vars_anova if df_anova[c].dtype == "object" and not c.endswith('_woe')]
+        
+        # Variables numéricas (incluyendo WOE)
         num_vars_pca_lda = [c for c in all_vars_pca_lda if c not in cat_cols_pca_lda]
         num_vars_anova = [c for c in all_vars_anova if c not in cat_cols_anova]
 
+        # Preparar DataFrames para modelado
         df_model_pca_lda = prepare_model_dataframe(df_pca_lda, all_vars_pca_lda, "flg_target")
         df_model_anova = prepare_model_dataframe(df_anova, all_vars_anova, "flg_target")
 
+        # Variables finales para modelado (todas numéricas, incluyendo WOE)
         final_vars_pca_lda = num_vars_pca_lda.copy()
         final_vars_anova = num_vars_anova.copy()
 
-        woe_dir = os.path.join(base_dir, "woe_mappings")
-        os.makedirs(woe_dir, exist_ok=True)
+        # Log de detección automática
+        logger.info("DETECCIÓN AUTOMÁTICA DE VARIABLES WOE:")
+        logger.info(f"  PCA+LDA: {len(woe_vars_pca_lda)} variables WOE encontradas: {woe_vars_pca_lda}")
+        logger.info(f"  ANOVA: {len(woe_vars_anova)} variables WOE encontradas: {woe_vars_anova}")
+        logger.info(f"  Variables categóricas originales PCA+LDA: {len(cat_cols_pca_lda)}")
+        logger.info(f"  Variables categóricas originales ANOVA: {len(cat_cols_anova)}")
+        
+        if woe_vars_pca_lda or woe_vars_anova:
+            logger.info("✅ Variables WOE detectadas del EDA - usando directamente")
+        else:
+            logger.info("⚠️ No se detectaron variables WOE - aplicando conversión")
+            
+            # Solo aplicar WOE si no hay variables WOE del EDA
+            woe_dir = os.path.join(base_dir, "woe_mappings")
+            os.makedirs(woe_dir, exist_ok=True)
 
-        if cat_cols_pca_lda:
-            woe_pca_lda = WOETransformer(target_col="flg_target")
-            df_model_pca_lda = woe_pca_lda.fit_transform(df_model_pca_lda, cat_cols_pca_lda)
-            final_vars_pca_lda += [f"{c}_woe" for c in cat_cols_pca_lda]
-            woe_pca_lda.final_vars = final_vars_pca_lda
-            woe_pca_lda.save_mappings(os.path.join(woe_dir, "woe_mappings_pca_lda.json"))
-            df_model_pca_lda.to_csv(os.path.join(base_dir, "df_pca_lda_woe.csv"), index=False)
+            if cat_cols_pca_lda:
+                woe_pca_lda = WOETransformer(target_col="flg_target")
+                df_model_pca_lda = woe_pca_lda.fit_transform(df_model_pca_lda, cat_cols_pca_lda)
+                final_vars_pca_lda += [f"{c}_woe" for c in cat_cols_pca_lda]
+                woe_pca_lda.final_vars = final_vars_pca_lda
+                woe_pca_lda.save_mappings(os.path.join(woe_dir, "woe_mappings_pca_lda.json"))
+                df_model_pca_lda.to_csv(os.path.join(base_dir, "df_pca_lda_woe.csv"), index=False)
 
-        if cat_cols_anova:
-            woe_anova = WOETransformer(target_col="flg_target")
-            df_model_anova = woe_anova.fit_transform(df_model_anova, cat_cols_anova)
-            final_vars_anova += [f"{c}_woe" for c in cat_cols_anova]
-            woe_anova.final_vars = final_vars_anova
-            woe_anova.save_mappings(os.path.join(woe_dir, "woe_mappings_anova.json"))
-            df_model_anova.to_csv(os.path.join(base_dir, "df_anova_woe.csv"), index=False)
+            if cat_cols_anova:
+                woe_anova = WOETransformer(target_col="flg_target")
+                df_model_anova = woe_anova.fit_transform(df_model_anova, cat_cols_anova)
+                final_vars_anova += [f"{c}_woe" for c in cat_cols_anova]
+                woe_anova.final_vars = final_vars_anova
+                woe_anova.save_mappings(os.path.join(woe_dir, "woe_mappings_anova.json"))
+                df_model_anova.to_csv(os.path.join(base_dir, "df_anova_woe.csv"), index=False)
 
         logger.info(f"[TIMER] Preparación WOE: {time.perf_counter()-t0:.2f}s")
         time.sleep(0.1)
