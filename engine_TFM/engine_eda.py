@@ -24,7 +24,7 @@ class Exploracion:
         })
 
     @staticmethod
-    def separar_variables_inteligente(df, target='flg_target', max_unique_cats=20, max_concentration=0.98, verbose=True, logger=None):
+    def separar_variables_inteligente(df, target='flg_target', max_unique_cats=20, max_concentration=0.98, protected_variables=None, verbose=True, logger=None):
         """
         Separación inteligente de variables basada en contenido real, no solo tipos pandas.
 
@@ -40,6 +40,7 @@ class Exploracion:
             target: nombre de la columna objetivo
             max_unique_cats: máximo número de valores únicos para mantener categórica
             max_concentration: máximo porcentaje que puede cubrir un solo valor
+            protected_variables: lista de variables que no deben ser descartadas
             verbose: si mostrar logs detallados
 
         Returns:
@@ -58,12 +59,18 @@ class Exploracion:
             log_message(f"Dataset: {df.shape[0]} filas × {df.shape[1]} columnas")
             log_message(f"Máximo valores únicos para categóricas: {max_unique_cats}")
             log_message(f"Máximo concentración por valor: {max_concentration*100:.1f}%")
+            if protected_variables:
+                log_message(f"Variables protegidas: {protected_variables}")
 
         # Inicializar listas
         cat_cols = []
         num_cols = []
         descartadas_cols = []
         conversiones_num = []
+        
+        # Inicializar lista de variables protegidas
+        if protected_variables is None:
+            protected_variables = []
 
         # Analizar cada columna
         for col in df.columns:
@@ -76,6 +83,9 @@ class Exploracion:
             # PASO 1: Analizar tipo actual
             tipo_actual = df[col].dtype
             valores_no_nulos = df[col].dropna()
+            
+            if verbose and col in protected_variables:
+                log_message(f"  🔍 Tipo de datos: {tipo_actual}")
 
             if len(valores_no_nulos) == 0:
                 if verbose:
@@ -85,9 +95,20 @@ class Exploracion:
 
             # PASO 2: Intentar conversión automática a numérico (solo si es realmente numérica continua)
             es_numerica = False
-            if tipo_actual in ['int64', 'float64']:
+            # Verificar si es numérica (incluyendo tipos nullable de pandas)
+            is_numeric_type = (
+                tipo_actual in ['int64', 'float64'] or  # Tipos tradicionales
+                str(tipo_actual).startswith('Int') or   # Int64, Int32, etc.
+                str(tipo_actual).startswith('Float') or # Float64, Float32, etc.
+                pd.api.types.is_numeric_dtype(df[col])  # Verificación general
+            )
+            
+            if is_numeric_type:
                 # Ya es numérica
                 es_numerica = True
+                if col in protected_variables:
+                    if verbose:
+                        log_message(f"  🛡️ PROTEGIDA: Variable protegida, forzada como NUMÉRICA")
                 num_cols.append(col)
                 continue
             elif tipo_actual == 'object':
@@ -104,8 +125,13 @@ class Exploracion:
                             # Conversión exitosa y es realmente numérica continua
                             es_numerica = True
                             conversiones_num.append(col)
+                            if col in protected_variables:
+                                if verbose:
+                                    log_message(f"  🛡️ PROTEGIDA: Variable protegida, conversión automática a NUMÉRICA")
+                            else:
+                                if verbose:
+                                    log_message(f"  ✅ Conversión automática a NUMÉRICA exitosa")
                             if verbose:
-                                log_message(f"  ✅ Conversión automática a NUMÉRICA exitosa")
                                 log_message(f"     Tipo original: {tipo_actual} → numérica")
                             num_cols.append(col)
                             continue
@@ -132,8 +158,26 @@ class Exploracion:
                     log_message(f"  📈 Cardinalidad: {n_unique} valores únicos")
                     log_message(f"  📊 Concentración: {concentracion*100:.1f}% (valor más común)")
 
-                # PASO 4: Aplicar filtros de calidad
-                if n_unique > max_unique_cats:
+                # PASO 4: Aplicar filtros de calidad (respetando variables protegidas)
+                if col in protected_variables:
+                    # Para variables protegidas, verificar si debería ser numérica o categórica
+                    # basándose en su tipo de datos original
+                    is_numeric_type = (
+                        df[col].dtype in ['int64', 'float64'] or  # Tipos tradicionales
+                        str(df[col].dtype).startswith('Int') or   # Int64, Int32, etc.
+                        str(df[col].dtype).startswith('Float') or # Float64, Float32, etc.
+                        pd.api.types.is_numeric_dtype(df[col])  # Verificación general
+                    )
+                    
+                    if is_numeric_type:
+                        if verbose:
+                            log_message(f"  🛡️ PROTEGIDA: Variable protegida, forzada como NUMÉRICA")
+                        num_cols.append(col)
+                    else:
+                        if verbose:
+                            log_message(f"  🛡️ PROTEGIDA: Variable protegida, forzada como CATEGÓRICA")
+                        cat_cols.append(col)
+                elif n_unique > max_unique_cats:
                     if verbose:
                         log_message(f"  ❌ DESCARTADA: Demasiados valores únicos ({n_unique} > {max_unique_cats})")
                     descartadas_cols.append(col)
@@ -205,7 +249,7 @@ class Exploracion:
         resumen = df[num_cols].describe([0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99]).T
         resumen['pcrt_nulos'] = df[num_cols].isnull().mean().round(3)
         resumen['rango'] = resumen['max'] - resumen['min']
-        resumen['CV'] = np.abs(resumen['std'] / resumen['mean']).round(3)
+        resumen['CV'] = np.abs(resumen['std'].astype(float) / resumen['mean'].astype(float)).round(3)
         return resumen
 
 class SelectVarsCategoricals:
@@ -400,6 +444,59 @@ class SelectVarsCategoricals:
                     log_message(f"   • {col}: IV={iv:.4f} ({category})")
 
         return final_selected, woe_iv_results, ranking
+
+    @staticmethod
+    def convert_categorical_to_woe(df, selected_cat_vars, woe_iv_results, target='flg_target', verbose=True, logger=None):
+        """
+        Convierte variables categóricas seleccionadas a WOE (numéricas).
+        
+        Args:
+            df: DataFrame con los datos
+            selected_cat_vars: Lista de variables categóricas seleccionadas
+            woe_iv_results: Resultados del análisis WOE/IV
+            target: Variable objetivo
+            verbose: Si mostrar logs detallados
+            logger: Logger para mensajes
+            
+        Returns:
+            tuple: (df_woe, woe_columns) - DataFrame con variables WOE y lista de columnas WOE
+        """
+        def log_message(msg):
+            if logger:
+                logger.info(msg)
+            elif verbose:
+                pass
+
+        if verbose:
+            log_message(f"\n🔄 CONVERSIÓN A WOE")
+            log_message("=" * 50)
+            log_message(f"Convirtiendo {len(selected_cat_vars)} variables categóricas a WOE")
+
+        df_woe = df.copy()
+        woe_columns = []
+        
+        for col in selected_cat_vars:
+            if col in woe_iv_results:
+                woe_dict = woe_iv_results[col]['woe_values']
+                # Crear nueva columna WOE
+                woe_col_name = f"{col}_woe"
+                df_woe[woe_col_name] = df_woe[col].map(woe_dict).fillna(0)
+                woe_columns.append(woe_col_name)
+                
+                if verbose:
+                    log_message(f"  ✅ {col} → {woe_col_name}")
+                    log_message(f"     Valores WOE: {len(woe_dict)} categorías")
+                    log_message(f"     Rango WOE: [{min(woe_dict.values()):.3f}, {max(woe_dict.values()):.3f}]")
+            else:
+                if verbose:
+                    log_message(f"  ⚠️ {col}: No encontrada en resultados WOE/IV")
+
+        if verbose:
+            log_message(f"\n🎯 RESULTADO CONVERSIÓN WOE:")
+            log_message(f"   ✅ Variables convertidas: {len(woe_columns)}")
+            log_message(f"   📊 Columnas WOE creadas: {woe_columns}")
+
+        return df_woe, woe_columns
 
 
 class SelectVarsNumerics:

@@ -75,7 +75,12 @@ selection:
     min_samples: 30
   pca:
     enable: true
-    n_components: 35
+    # Modo de selección de componentes PCA:
+    # - "fixed_components": Usa un número fijo de componentes (n_components)
+    # - "variance_percentage": Calcula automáticamente el número de componentes que explican el porcentaje especificado
+    mode: "variance_percentage"  # Opciones: "fixed_components" o "variance_percentage"
+    n_components: 35             # Solo se usa si mode="fixed_components"
+    variance_threshold: 0.95     # Solo se usa si mode="variance_percentage" (95% de varianza)
     plot_variance: false
   lda_importance:
     enable: true
@@ -102,7 +107,7 @@ separation:
 categorical_selection:
   enable_chi_square: true             # Habilitar test Chi-square
   enable_woe_iv: true                 # Habilitar cálculo WOE/IV
-  iv_threshold: 0.1                  # Umbral mínimo de Information Value
+  iv_threshold: 0.3                  # Umbral mínimo de Information Value (MEDIA en adelante)
   chi_square_threshold: 0.05         # Umbral p-value para Chi-square
 
 # Configuración para protección de int_rate
