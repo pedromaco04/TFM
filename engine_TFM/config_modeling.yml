@@ -1,18 +1,38 @@
 # Configuration for modeling pipeline (train/test, sensitivity, and smart grids)
 
+# Control de modelos a ejecutar
+models:
+  enable_logit: true           # Regresión logística
+  enable_gnb: false           # Gaussian Naive Bayes (deshabilitado por defecto)
+  enable_svm_linear: false    # SVM Lineal (deshabilitado por defecto)
+  enable_svm_linear_smart: false  # SVM Lineal con búsqueda (deshabilitado por defecto)
+  enable_svm_rbf_smart: false    # SVM RBF (deshabilitado por defecto - muy lento)
+  enable_mlp: false           # Red Neuronal MLP (deshabilitado por defecto)
+
+# Control de ejecución de etapas
+execution:
+  run_training: true
+  run_plots: false
+  run_sensitivity: false
+  run_comparator: true
+
+# Configuración de datos
 data:
   test_size: 0.30
   random_seed: 42
 
+# Configuración de sensibilidad
 sensitivity:
   max_rows: 50000
 
+# Configuración SVM Lineal
 svm_linear:
   max_train_samples: 100000
   max_test_samples: 100000
   tol: 0.001
   max_iter: 3000
 
+# Configuración SVM RBF
 svm_rbf:
   max_train_samples: 50000
   max_test_samples: 100000
@@ -20,8 +40,15 @@ svm_rbf:
   max_iter: 2000
   cache_size: 500
 
+# Configuración MLP
 mlp:
   max_train_samples: 100000
   max_test_samples: 100000
   max_iter: 50
   n_iter_no_change: 5
+
+# Configuración de logging
+logging:
+  enable_file_logging: true
+  log_filename: "log_MODELING.txt"
+  enable_progress_bar: true
