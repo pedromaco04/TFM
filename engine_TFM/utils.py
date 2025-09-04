@@ -40,9 +40,16 @@ def correlacion_con_target(df, cols, target, min_samples=30):
     """
     correlaciones = {}
     for col in cols:
-        serie_valida = df[[col, target]].dropna()
-        if len(serie_valida) >= min_samples:
-            correlaciones[col] = serie_valida.corr().iloc[0,1]
+        try:
+            serie_valida = df[[col, target]].dropna()
+            if len(serie_valida) >= min_samples:
+                correlaciones[col] = serie_valida.corr().iloc[0,1]
+        except Exception as e:
+            continue
+    
+    if not correlaciones:
+        return pd.DataFrame(columns=['correlacion_con_target'])
+    
     df_corr = pd.DataFrame.from_dict(correlaciones, orient='index', columns=['correlacion_con_target'])
     df_corr['correlacion_con_target'] = df_corr['correlacion_con_target'].abs()
     df_corr = df_corr.sort_values(by='correlacion_con_target', ascending=False)
@@ -657,9 +664,21 @@ def proteger_int_rate(df: pd.DataFrame, variables_numericas: list, variables_cat
     if protected_var not in vars_para_correlacion:
         vars_para_correlacion.append(protected_var)
 
+    # Filtrar solo variables realmente numéricas para correlación
+    vars_numericas_validas = []
+    for var in vars_para_correlacion:
+        if pd.api.types.is_numeric_dtype(df[var]):
+            vars_numericas_validas.append(var)
+        else:
+            if verbose:
+                log_message(f"⚠️ Variable {var} no es numérica para correlación: {df[var].dtype}")
+
+    if verbose:
+        log_message(f"Variables válidas para correlación: {len(vars_numericas_validas)}")
+
     # Calcular matriz de correlación
     try:
-        corr_matrix = df[vars_para_correlacion].corr()
+        corr_matrix = df[vars_numericas_validas].corr()
         corr_con_protegida = corr_matrix[protected_var].abs()
 
         if verbose:
@@ -673,7 +692,7 @@ def proteger_int_rate(df: pd.DataFrame, variables_numericas: list, variables_cat
         # Identificar variables altamente correlacionadas
         variables_altamente_correlacionadas = []
         for var in corr_con_protegida.index:
-            if var != protected_var and var in variables_numericas:
+            if var != protected_var and var in variables_numericas and var in vars_numericas_validas:
                 corr_abs = corr_con_protegida[var]
                 if corr_abs >= correlation_threshold:
                     variables_altamente_correlacionadas.append({

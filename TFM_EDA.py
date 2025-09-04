@@ -1,6 +1,7 @@
 import os
 import argparse
 import pandas as pd
+import numpy as np
 from typing import List, Optional, Tuple
 import logging
 from datetime import datetime
@@ -16,6 +17,8 @@ from engine_TFM.utils import (
     derive_features,
     proteger_int_rate,
 )
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import time
 
 # Configurar pandas para suprimir warnings en terminal
@@ -56,6 +59,38 @@ def print_pipeline_summary(execution_time, total_rows, pca_vars, anova_vars, fil
     print(f"   🛡️  int_rate PROTEGIDO: ✅")
     print(f"   📁 Archivos guardados: {', '.join(files_saved)}")
     print(f"   📋 Log detallado: log_EDA.txt")
+
+
+def calculate_pca_components_by_variance(df, num_cols, variance_threshold=0.95):
+    """
+    Calcula el número de componentes PCA que explican un porcentaje específico de varianza.
+    
+    Args:
+        df: DataFrame con los datos
+        num_cols: Lista de columnas numéricas
+        variance_threshold: Porcentaje de varianza a explicar (ej: 0.95 para 95%)
+    
+    Returns:
+        int: Número de componentes que explican el porcentaje especificado
+    """
+    # Preparar datos
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df[num_cols].fillna(df[num_cols].median()))
+    
+    # Ejecutar PCA con todos los componentes
+    pca = PCA()
+    pca.fit(X_scaled)
+    
+    # Calcular varianza acumulada
+    varianza_acumulada = pca.explained_variance_ratio_.cumsum()
+    
+    # Encontrar el número de componentes que alcanza el threshold
+    n_components = np.argmax(varianza_acumulada >= variance_threshold) + 1
+    
+    # Asegurar que al menos sea 1
+    n_components = max(1, n_components)
+    
+    return n_components, varianza_acumulada[n_components-1]
 
 
 class EDAPipeline:
@@ -109,7 +144,13 @@ class EDAPipeline:
             'selection': {
                 'filter_missing': {'enable': True, 'threshold': 0.5, 'rescue_by_correlation': True, 'min_corr': 0.1, 'min_samples': 30},
                 'filter_cv': {'enable': True, 'threshold': 0.1, 'rescue_by_correlation': True, 'min_corr': 0.1, 'min_samples': 30},
-                'pca': {'enable': True, 'n_components': 35, 'plot_variance': False},
+                'pca': {
+                    'enable': True, 
+                    'mode': 'variance_percentage',  # 'fixed_components' o 'variance_percentage'
+                    'n_components': 35,  # Solo se usa si mode='fixed_components'
+                    'variance_threshold': 0.95,  # Solo se usa si mode='variance_percentage'
+                    'plot_variance': False
+                },
                 'lda_importance': {'enable': True, 'importance_threshold': 0.05, 'plot_importance': False},
                 'anova': {'enable': True, 'min_f_score': None, 'max_p_value': 0.05, 'top_n': None},
                 'correlation_redundancy': {'enable': True, 'threshold': 0.6, 'plot_heatmap': False},
@@ -340,12 +381,20 @@ class EDAPipeline:
         config = self.config.get('separation', {})
         max_unique_cats = config.get('max_unique_categorical', 20)
         max_concentration = config.get('max_concentration_categorical', 0.98)
+        
+        # Obtener variables protegidas
+        protection_config = self.config.get('int_rate_protection', {})
+        protected_variables = []
+        if protection_config.get('enable_protection', True):
+            protected_var = protection_config.get('protected_variable', 'int_rate')
+            protected_variables = [protected_var]
 
         vars_dict = Exploracion.separar_variables_inteligente(
             df,
             target=self.config['data']['target_column'],
             max_unique_cats=max_unique_cats,
             max_concentration=max_concentration,
+            protected_variables=protected_variables,
             verbose=False,  # Solo log, no prints en terminal
             logger=self.logger
         )
@@ -446,23 +495,23 @@ class EDAPipeline:
         self._log_step_end("Numeric summary and filtering", 6, f"Selected: {len(selected)}")
         return selected
 
-    def select_categorical_variables(self, df: pd.DataFrame, cat_cols: List[str]) -> Optional[List[str]]:
+    def select_categorical_variables(self, df: pd.DataFrame, cat_cols: List[str]) -> Tuple[List[str], pd.DataFrame]:
         self._log_step_start("Categorical variables selection", 6.5)
 
         if not cat_cols:
             self.logger.info("No categorical variables to process")
             self._log_step_end("Categorical variables selection", 6.5, "No variables")
-            return []
+            return [], df
 
         # Obtener configuración
         config = self.config.get('categorical_selection', {})
-        iv_threshold = config.get('iv_threshold', 0.1)
+        iv_threshold = config.get('iv_threshold', 0.3)  # Cambiado a 0.3 (MEDIA en adelante)
         chi_square_threshold = config.get('chi_square_threshold', 0.05)
         enable_chi_square = config.get('enable_chi_square', True)
         enable_woe_iv = config.get('enable_woe_iv', True)
 
         self.logger.info(f"Configuración selección categórica:")
-        self.logger.info(f"  • IV threshold: {iv_threshold}")
+        self.logger.info(f"  • IV threshold: {iv_threshold} (MEDIA en adelante)")
         self.logger.info(f"  • Chi-square: {'✅' if enable_chi_square else '❌'}")
         self.logger.info(f"  • WOE/IV: {'✅' if enable_woe_iv else '❌'}")
 
@@ -472,23 +521,48 @@ class EDAPipeline:
                 df, cat_cols, target=self.config['data']['target_column'],
                 iv_threshold=iv_threshold, verbose=True  # Detallado en log
             )
+            
+            # PASO NUEVO: Conversión a WOE
+            if selected_vars:
+                df_woe, woe_columns = SelectVarsCategoricals.convert_categorical_to_woe(
+                    df, selected_vars, woe_iv_results, 
+                    target=self.config['data']['target_column'],
+                    verbose=True, logger=self.logger
+                )
+                self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
+                self.logger.info(f"   ✅ Variables iniciales: {len(cat_cols)}")
+                self.logger.info(f"   ✅ Variables seleccionadas: {len(selected_vars)}")
+                self.logger.info(f"   🔄 Variables convertidas a WOE: {len(woe_columns)}")
+                self.logger.info(f"   ❌ Variables descartadas: {len(cat_cols) - len(selected_vars)}")
+                self.logger.info(f"   🏆 Variables WOE finales: {woe_columns}")
+                
+                self._log_step_end("Categorical variables selection", 6.5, f"Selected: {len(woe_columns)} WOE variables")
+                return woe_columns, df_woe
+            else:
+                self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
+                self.logger.info(f"   ✅ Variables iniciales: {len(cat_cols)}")
+                self.logger.info(f"   ❌ Variables seleccionadas: 0 (ninguna superó IV threshold)")
+                self.logger.info(f"   ❌ Variables descartadas: {len(cat_cols)}")
+                
+                self._log_step_end("Categorical variables selection", 6.5, "No variables selected")
+                return [], df
         else:
             # Solo Chi-square si WOE/IV está deshabilitado
             selected_vars = SelectVarsCategoricals.chi_square_test(
                 df, cat_cols, target=self.config['data']['target_column'],
                 threshold=chi_square_threshold, verbose=True  # Detallado en log
             )
+            
+            self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
+            self.logger.info(f"   ✅ Variables iniciales: {len(cat_cols)}")
+            self.logger.info(f"   ✅ Variables seleccionadas: {len(selected_vars)}")
+            self.logger.info(f"   ❌ Variables descartadas: {len(cat_cols) - len(selected_vars)}")
 
-        self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
-        self.logger.info(f"   ✅ Variables iniciales: {len(cat_cols)}")
-        self.logger.info(f"   ✅ Variables seleccionadas: {len(selected_vars)}")
-        self.logger.info(f"   ❌ Variables descartadas: {len(cat_cols) - len(selected_vars)}")
+            if selected_vars:
+                self.logger.info(f"   🏆 Variables finales: {selected_vars}")
 
-        if selected_vars:
-            self.logger.info(f"   🏆 Variables finales: {selected_vars}")
-
-        self._log_step_end("Categorical variables selection", 6.5, f"Selected: {len(selected_vars)}")
-        return selected_vars
+            self._log_step_end("Categorical variables selection", 6.5, f"Selected: {len(selected_vars)}")
+            return selected_vars, df
 
     def pca_lda_selection(self, df: pd.DataFrame, num_cols: List[str]) -> Optional[List[str]]:
         self._log_step_start("PCA diagnostics and LDA importance", 7)
@@ -500,8 +574,27 @@ class EDAPipeline:
 
         cfg = self.config['selection']
         
+        # Determinar el número de componentes PCA según el modo configurado
+        pca_cfg = cfg['pca']
+        pca_mode = pca_cfg.get('mode', 'variance_percentage')
+        
+        if pca_mode == 'fixed_components':
+            n_components = int(pca_cfg.get('n_components', 35))
+            self.logger.info(f"🔧 Modo PCA: Componentes fijos ({n_components})")
+        elif pca_mode == 'variance_percentage':
+            variance_threshold = float(pca_cfg.get('variance_threshold', 0.95))
+            n_components, actual_variance = calculate_pca_components_by_variance(
+                df, num_cols, variance_threshold
+            )
+            self.logger.info(f"🔧 Modo PCA: Porcentaje de varianza ({variance_threshold*100:.1f}%)")
+            self.logger.info(f"   📊 Componentes calculados: {n_components}")
+            self.logger.info(f"   📈 Varianza real explicada: {actual_variance*100:.2f}%")
+        else:
+            # Fallback a modo fijo si el modo no es válido
+            n_components = int(pca_cfg.get('n_components', 35))
+            self.logger.warning(f"⚠️ Modo PCA inválido '{pca_mode}', usando componentes fijos ({n_components})")
+        
         if cfg['pca'].get('enable', True):
-            n_components = int(cfg['pca'].get('n_components', 35))
             plot_variance = bool(cfg['pca'].get('plot_variance', False))
             self.logger.info(f"Running PCA with {n_components} components, plot_variance: {plot_variance}")
             
@@ -527,7 +620,7 @@ class EDAPipeline:
             df,
             num_cols,
             target=self.config['data']['target_column'],
-            n_pca_components=int(cfg['pca'].get('n_components', 35)),
+            n_pca_components=n_components,  # Usar el número calculado dinámicamente
             umbral_importancia=importance_threshold,
             plot_graph=plot_importance,
             verbose=self.verbose,
@@ -756,10 +849,10 @@ class EDAPipeline:
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='Completado')
 
-                # PASO 7: Selección categórica
+                # PASO 7: Selección categórica → Conversión a WOE
                 print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='')
                 current_step += 1
-                cat_sel = self.select_categorical_variables(df, cat_cols) if cat_cols else []
+                cat_woe_cols, df = self.select_categorical_variables(df, cat_cols) if cat_cols else ([], df)
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='Completado')
 
@@ -770,11 +863,13 @@ class EDAPipeline:
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='Completado')
 
-                # PASO 9: PCA+LDA y ANOVA
+                # PASO 9: PCA+LDA y ANOVA (incluye numéricas + WOE)
                 print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='')
                 current_step += 1
-                vars_pca_lda = self.pca_lda_selection(df, num_sel)
-                vars_anova = self.anova_selection(df, num_sel)
+                # Combinar variables numéricas + WOE para ambos flujos
+                all_numeric_vars = num_sel + cat_woe_cols
+                vars_pca_lda = self.pca_lda_selection(df, all_numeric_vars)
+                vars_anova = self.anova_selection(df, all_numeric_vars)
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='Completado')
 
@@ -784,9 +879,9 @@ class EDAPipeline:
                 vars_corr_pca_lda = self.correlation_redundancy(df, vars_pca_lda, label='PCA+LDA') if vars_pca_lda else None
                 vars_corr_anova = self.correlation_redundancy(df, vars_anova, label='ANOVA') if vars_anova else None
 
-                # Combinar variables finales (numéricas + categóricas)
-                final_vars_pca_lda = (vars_corr_pca_lda + cat_sel) if vars_corr_pca_lda else cat_sel
-                final_vars_anova = (vars_corr_anova + cat_sel) if vars_corr_anova else cat_sel
+                # Variables finales (ya incluyen numéricas + WOE)
+                final_vars_pca_lda = vars_corr_pca_lda if vars_corr_pca_lda else []
+                final_vars_anova = vars_corr_anova if vars_corr_anova else []
 
                 self.save_outputs(df, final_vars_pca_lda, final_vars_anova)
                 time.sleep(0.2)
@@ -820,7 +915,7 @@ class EDAPipeline:
                 self.logger.info(f"Final dataset shape: {df.shape}")
                 self.logger.info(f"Variables numéricas PCA+LDA: {len(vars_corr_pca_lda) if vars_corr_pca_lda else 0}")
                 self.logger.info(f"Variables numéricas ANOVA: {len(vars_corr_anova) if vars_corr_anova else 0}")
-                self.logger.info(f"Variables categóricas: {len(cat_sel)}")
+                self.logger.info(f"Variables categóricas WOE: {len(cat_woe_cols)}")
                 self.logger.info(f"TOTAL PCA+LDA (Num + Cat): {len(final_vars_pca_lda)}")
                 self.logger.info(f"TOTAL ANOVA (Num + Cat): {len(final_vars_anova)}")
                 self.logger.info("=" * 80)
