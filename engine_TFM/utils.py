@@ -9,7 +9,15 @@ import seaborn as sns
 import networkx as nx
 from scipy.stats import pearsonr
 import os
+import json
+from datetime import datetime
 from typing import Dict, Any, List
+import logging
+
+def log_message(logger, message):
+    """Helper para logging compatible"""
+    if logger:
+        logger.info(message)
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 import numpy as np
@@ -144,9 +152,8 @@ def load_config(config_path: str = None, defaults: dict = None) -> dict:
         return defaults
 # ===== Reubicadas desde TFM/utils/utils.py para unificar utils =====
 def section(title: str) -> None:
-    print("\n" + "=" * 80)
-    print(title)
-    print("=" * 80)
+    # Solo log, no prints en consola
+    pass
 
 
 def prepare_model_dataframe(df: pd.DataFrame, numeric_vars: List[str], target: str = "flg_target") -> pd.DataFrame:
@@ -160,7 +167,8 @@ def stratified_sample_xy(X: pd.DataFrame, y: pd.Series, max_rows: int, random_st
     aux = X.copy()
     aux["_y_"] = y.values
     sampled = aux.groupby("_y_", group_keys=False).apply(
-        lambda g: g.sample(frac=fraction, random_state=random_state)
+        lambda g: g.sample(frac=fraction, random_state=random_state),
+        include_groups=False
     ).drop(columns=["_y_"])
     return sampled
 
@@ -188,18 +196,20 @@ def evaluate_at_threshold(y_true: np.ndarray, y_score: np.ndarray, threshold: fl
     }
 
 
-def print_metrics_block(model_name: str, metrics: Dict[str, Any]) -> None:
-    print(f"[{model_name}] Test metrics:")
-    print(
-        f"  AUC={metrics['AUC_test']:.4f} | Acc={metrics['Accuracy_test']:.4f} | "
-        f"F1={metrics['F1_test']:.4f} | BalAcc={metrics['BalancedAcc_test']:.4f}"
-    )
-    print(
-        f"  PR_AUC(AP)={metrics['PR_AUC_test']:.4f} | KS={metrics['KS_test']:.4f} | "
-        f"Brier={metrics['Brier_test']:.4f}"
-    )
-    cm = metrics["ConfusionMatrix"]
-    print(f"  ConfusionMatrix = [[{cm[0,0]}, {cm[0,1]}], [{cm[1,0]}, {cm[1,1]}]]")
+def print_metrics_block(model_name: str, metrics: Dict[str, Any], logger=None) -> None:
+    # Solo log, no prints en consola
+    if logger:
+        log_message(logger, f"[{model_name}] Test metrics:")
+        log_message(logger,
+            f"  AUC={metrics['AUC_test']:.4f} | Acc={metrics['Accuracy_test']:.4f} | "
+            f"F1={metrics['F1_test']:.4f} | BalAcc={metrics['BalancedAcc_test']:.4f}"
+        )
+        log_message(logger,
+            f"  PR_AUC(AP)={metrics['PR_AUC_test']:.4f} | KS={metrics['KS_test']:.4f} | "
+            f"Brier={metrics['Brier_test']:.4f}"
+        )
+        cm = metrics["ConfusionMatrix"]
+        log_message(logger, f"  ConfusionMatrix = [[{cm[0,0]}, {cm[0,1]}], [{cm[1,0]}, {cm[1,1]}]]")
 
 
 def plot_comparative_curves(models_info: list, out_path: str) -> None:
@@ -227,7 +237,7 @@ def plot_comparative_curves(models_info: list, out_path: str) -> None:
     ax2.legend(fontsize=8)
     plt.tight_layout()
     plt.savefig(out_path, bbox_inches='tight')
-    print(f"[SAVE] Saved comparative curves: {out_path}")
+    _log_info(f"[SAVE] Saved comparative curves: {out_path}")
 
 
 def plot_comparative_sensitivity(curves_info: list, var_name: str, out_path: str) -> None:
@@ -243,15 +253,15 @@ def plot_comparative_sensitivity(curves_info: list, var_name: str, out_path: str
     plt.legend(fontsize=8)
     plt.tight_layout()
     plt.savefig(out_path, bbox_inches='tight')
-    print(f"[SAVE] Saved comparative sensitivity: {out_path}")
+    _log_info(f"[SAVE] Saved comparative sensitivity: {out_path}")
 
 
 def sensitivity_int_rate(model, X_test: pd.DataFrame, y_test: pd.Series, label: str, images_dir: str, max_rows: int = 50000) -> None:
     from engine_TFM.engine_modeling import ModelingEngine
     if 'int_rate' not in X_test.columns:
-        print(f"[{label}] 'int_rate' not present in X_test. Skipping sensitivity.")
+        _log_info(f"[{label}] 'int_rate' not present in X_test. Skipping sensitivity.")
         return
-    print(f"[{label}] Sensitivity for 'int_rate'...")
+    _log_info(f"[{label}] Sensitivity for 'int_rate'...")
     tasas = np.arange(10, 95, 5)
     safe_label = label.replace(' | ', '_').replace(' ', '_').lower()
     save_path = os.path.join(images_dir, f'sensibilidad_int_rate_{safe_label}.png')
@@ -268,7 +278,7 @@ def sensitivity_int_rate(model, X_test: pd.DataFrame, y_test: pd.Series, label: 
         show_plot=False,
         max_rows=None
     )
-    print(f"[SAVE] Sensitivity saved: {save_path}")
+    _log_info(f"[SAVE] Sensitivity saved: {save_path}")
 
 
 class ModelComparator:
@@ -318,12 +328,31 @@ class ModelComparator:
 
     def compare(self) -> pd.DataFrame:
         from engine_TFM.engine_modeling import ModelingEngine
+
+        # Intentar usar dataframes con WOE si existen, sino usar originales
+        csv_pca_lda_woe = os.path.join(self.base_dir, 'df_pca_lda_woe.csv')
+        csv_anova_woe = os.path.join(self.base_dir, 'df_anova_woe.csv')
         csv_pca_lda = os.path.join(self.base_dir, 'df_pca_lda.csv')
         csv_anova = os.path.join(self.base_dir, 'df_anova.csv')
-        df_pca_lda = pd.read_csv(csv_pca_lda)
-        df_anova = pd.read_csv(csv_anova)
-        num_pca_lda = df_pca_lda.columns.tolist()[:-1]
-        num_anova = df_anova.columns.tolist()[:-1]
+
+        # Cargar dataframes con WOE si existen
+        if os.path.exists(csv_pca_lda_woe):
+            df_pca_lda = pd.read_csv(csv_pca_lda_woe)
+            _log_info(f"[ModelComparator] Usando dataframe PCA+LDA con WOE: {csv_pca_lda_woe}")
+        else:
+            df_pca_lda = pd.read_csv(csv_pca_lda)
+            _log_info(f"[ModelComparator] Usando dataframe PCA+LDA original: {csv_pca_lda}")
+
+        if os.path.exists(csv_anova_woe):
+            df_anova = pd.read_csv(csv_anova_woe)
+            _log_info(f"[ModelComparator] Usando dataframe ANOVA con WOE: {csv_anova_woe}")
+        else:
+            df_anova = pd.read_csv(csv_anova)
+            _log_info(f"[ModelComparator] Usando dataframe ANOVA original: {csv_anova}")
+
+        # Intentar cargar las variables finales desde los mapeos WOE
+        num_pca_lda = self._get_final_vars_from_woe('pca', df_pca_lda)
+        num_anova = self._get_final_vars_from_woe('anova', df_anova)
         cat_cols: List[str] = []
         entries = [
             ('LOGIT | PCA+LDA', 'logit_pca_lda.pkl', 'pca'),
@@ -341,7 +370,7 @@ class ModelComparator:
         for label, fname, which in entries:
             fpath = os.path.join(self.models_dir, fname)
             if not os.path.exists(fpath):
-                print(f"[SKIP] No existe: {fpath}")
+                # silencioso, no prints
                 continue
             model = ModelingEngine.load_model(fpath)
             metrics = self._evaluate_loaded_model(
@@ -354,6 +383,53 @@ class ModelComparator:
             row.update(metrics)
             rows.append(row)
         return pd.DataFrame(rows).sort_values(by=['AUC', 'PR_AUC(AP)'], ascending=[False, False]).reset_index(drop=True)
+
+    def _get_final_vars_from_woe(self, dataset_type: str, df: pd.DataFrame) -> List[str]:
+        """
+        Obtiene las variables finales desde los mapeos WOE guardados.
+
+        Args:
+            dataset_type: 'pca' o 'anova'
+            df: DataFrame con las columnas disponibles
+
+        Returns:
+            Lista de variables finales a usar
+        """
+        woe_file = os.path.join(self.base_dir, f'woe_mappings/woe_mappings_{dataset_type}.json')
+
+        if os.path.exists(woe_file):
+            try:
+                with open(woe_file, 'r', encoding='utf-8') as f:
+                    woe_data = json.load(f)
+
+                final_vars = woe_data.get('final_vars')
+                if final_vars:
+                    # Verificar que todas las variables estén disponibles en el dataframe
+                    available_vars = [var for var in final_vars if var in df.columns]
+                    if len(available_vars) == len(final_vars):
+                        _log_info(f"[ModelComparator] Usando variables finales desde WOE ({dataset_type}): {len(available_vars)} variables")
+                        return available_vars
+                    else:
+                        _log_info(f"[ModelComparator] Algunas variables finales no disponibles en {dataset_type}, usando todas menos target")
+            except Exception as e:
+                _log_info(f"[ModelComparator] Error leyendo mapeos WOE para {dataset_type}: {e}")
+
+        # Fallback: usar todas las columnas menos el target
+        all_cols = df.columns.tolist()
+        if 'flg_target' in all_cols:
+            all_cols.remove('flg_target')
+        _log_info(f"[ModelComparator] Usando todas las columnas disponibles para {dataset_type}: {len(all_cols)} variables")
+        return all_cols
+
+
+def _log_info(message: str) -> None:
+    """
+    Helper para enviar info al logger global si existe; evita prints en consola.
+    """
+    logger = logging.getLogger('ModelingPipeline')
+    if logger and logger.handlers:
+        logger.info(message)
+    # no prints
 
     def save(self, df_cmp: pd.DataFrame, filename: str = 'models_comparison.csv') -> str:
         out_csv = os.path.join(self.reports_dir, filename)
@@ -698,3 +774,189 @@ def derive_features(df: pd.DataFrame, toggles: dict, verbose: bool = True) -> pd
             # Información detallada solo en log (manejo desde TFM_EDA.py)
             pass
     return df
+
+
+class WOETransformer:
+    """
+    Transformer para Weight of Evidence (WOE) encoding de variables categóricas.
+
+    Maneja automáticamente los valores faltantes como una categoría separada y
+    guarda los mapeos para replicación posterior en producción.
+    """
+
+    def __init__(self, target_col: str = 'flg_target', min_samples: int = 30):
+        self.target_col = target_col
+        self.min_samples = min_samples
+        self.woe_mappings: Dict[str, Dict[str, float]] = {}
+        self.category_stats: Dict[str, Dict[str, Any]] = {}
+
+    def fit(self, df: pd.DataFrame, cat_cols: List[str]) -> 'WOETransformer':
+        """
+        Calcula los mapeos WOE para las variables categóricas especificadas.
+
+        Args:
+            df: DataFrame de entrenamiento
+            cat_cols: Lista de columnas categóricas a procesar
+
+        Returns:
+            self: Transformer entrenado
+        """
+        for col in cat_cols:
+            if col not in df.columns:
+                continue
+
+            # Crear tabla de contingencia
+            contingency_table = pd.crosstab(df[col].fillna('MISSING'), df[self.target_col])
+            total_good = contingency_table[0].sum() if 0 in contingency_table.columns else 0
+            total_bad = contingency_table[1].sum() if 1 in contingency_table.columns else 0
+            total_samples = len(df)
+
+            woe_dict = {}
+            stats_dict = {}
+
+            for category in contingency_table.index:
+                good_count = contingency_table.loc[category, 0] if 0 in contingency_table.columns else 0
+                bad_count = contingency_table.loc[category, 1] if 1 in contingency_table.columns else 0
+
+                # Calcular tasas con suavizado para evitar división por cero
+                good_rate = (good_count + 0.5) / (total_good + 1)
+                bad_rate = (bad_count + 0.5) / (total_bad + 1)
+
+                # Calcular WOE
+                woe = np.log(good_rate / bad_rate)
+                woe_dict[str(category)] = float(woe)
+
+                # Estadísticas para análisis
+                stats_dict[str(category)] = {
+                    'good_count': int(good_count),
+                    'bad_count': int(bad_count),
+                    'total_count': int(good_count + bad_count),
+                    'good_rate': float(good_rate),
+                    'bad_rate': float(bad_rate),
+                    'woe': float(woe)
+                }
+
+            self.woe_mappings[col] = woe_dict
+            self.category_stats[col] = stats_dict
+
+        return self
+
+    def transform(self, df: pd.DataFrame, cat_cols: List[str]) -> pd.DataFrame:
+        """
+        Aplica la transformación WOE a las variables categóricas.
+
+        Args:
+            df: DataFrame a transformar
+            cat_cols: Lista de columnas categóricas a transformar
+
+        Returns:
+            DataFrame con variables transformadas
+        """
+        df_transformed = df.copy()
+
+        for col in cat_cols:
+            if col not in df.columns or col not in self.woe_mappings:
+                continue
+
+            # Crear nueva columna con sufijo _woe
+            new_col = f"{col}_woe"
+            df_transformed[new_col] = df[col].fillna('MISSING').astype(str).map(self.woe_mappings[col])
+
+            # Manejar categorías no vistas (asignar WOE promedio)
+            nan_mask = df_transformed[new_col].isna()
+            if nan_mask.any():
+                mean_woe = np.mean(list(self.woe_mappings[col].values()))
+                df_transformed.loc[nan_mask, new_col] = mean_woe
+
+        return df_transformed
+
+    def fit_transform(self, df: pd.DataFrame, cat_cols: List[str]) -> pd.DataFrame:
+        """
+        Ajusta el transformer y transforma los datos en un solo paso.
+
+        Args:
+            df: DataFrame a procesar
+            cat_cols: Lista de columnas categóricas
+
+        Returns:
+            DataFrame transformado
+        """
+        return self.fit(df, cat_cols).transform(df, cat_cols)
+
+    def save_mappings(self, filepath: str) -> None:
+        """
+        Guarda los mapeos WOE en un archivo JSON para replicación posterior.
+
+        Args:
+            filepath: Ruta donde guardar el archivo
+        """
+        save_data = {
+            'woe_mappings': self.woe_mappings,
+            'category_stats': self.category_stats,
+            'target_col': self.target_col,
+            'min_samples': self.min_samples,
+            'final_vars': getattr(self, 'final_vars', None),
+            'timestamp': datetime.now().isoformat()
+        }
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(save_data, f, indent=2, ensure_ascii=False)
+
+        _log_info(f"[WOE] Mapeos guardados en: {filepath}")
+
+    def load_mappings(self, filepath: str) -> 'WOETransformer':
+        """
+        Carga los mapeos WOE desde un archivo JSON.
+
+        Args:
+            filepath: Ruta del archivo a cargar
+
+        Returns:
+            self: Transformer con mapeos cargados
+        """
+        with open(filepath, 'r', encoding='utf-8') as f:
+            save_data = json.load(f)
+
+        self.woe_mappings = save_data['woe_mappings']
+        self.category_stats = save_data.get('category_stats', {})
+        self.target_col = save_data['target_col']
+        self.min_samples = save_data['min_samples']
+        if 'final_vars' in save_data:
+            self.final_vars = save_data['final_vars']
+
+        _log_info(f"[WOE] Mapeos cargados desde: {filepath}")
+        return self
+
+    def get_feature_names_out(self, cat_cols: List[str]) -> List[str]:
+        """
+        Devuelve los nombres de las nuevas columnas WOE.
+
+        Args:
+            cat_cols: Lista de columnas categóricas originales
+
+        Returns:
+            Lista de nombres de columnas WOE
+        """
+        return [f"{col}_woe" for col in cat_cols]
+
+    def get_summary_stats(self) -> pd.DataFrame:
+        """
+        Devuelve un resumen estadístico de las transformaciones WOE realizadas.
+
+        Returns:
+            DataFrame con estadísticas resumidas
+        """
+        summary_data = []
+
+        for col, stats in self.category_stats.items():
+            for category, cat_stats in stats.items():
+                summary_data.append({
+                    'variable': col,
+                    'categoria': category,
+                    'good_count': cat_stats['good_count'],
+                    'bad_count': cat_stats['bad_count'],
+                    'total_count': cat_stats['total_count'],
+                    'woe': cat_stats['woe']
+                })
+
+        return pd.DataFrame(summary_data)
