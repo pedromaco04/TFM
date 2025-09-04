@@ -4,6 +4,8 @@ import pandas as pd
 from typing import List, Optional, Tuple
 import logging
 from datetime import datetime
+import warnings
+import sys
 
 from engine_TFM.engine_eda import Exploracion, SelectVarsNumerics, SelectVarsCategoricals
 from engine_TFM.utils import (
@@ -15,7 +17,12 @@ from engine_TFM.utils import (
     proteger_int_rate,
 )
 import time
-import sys
+
+# Configurar pandas para suprimir warnings en terminal
+pd.options.mode.chained_assignment = None  # default='warn'
+warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
 
 
 def print_section_progress(current, total, section_name='', prefix='', suffix='', length=50):
@@ -143,6 +150,11 @@ class EDAPipeline:
         # para que los logs detallados vayan solo al archivo
         self.logger.addHandler(file_handler)
         
+        # Configurar logging de warnings para que vayan al archivo
+        warnings_logger = logging.getLogger('py.warnings')
+        warnings_logger.setLevel(logging.WARNING)
+        warnings_logger.addHandler(file_handler)
+        
         # Log pipeline start
         self.logger.info("=" * 80)
         self.logger.info("EDA PIPELINE STARTED")
@@ -190,7 +202,23 @@ class EDAPipeline:
         self.logger.info(f"Loading data from: {path}")
         
         try:
-            df = pd.read_csv(path)
+            # Capturar warnings y enviarlos al log en lugar del terminal
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                
+                # Cargar datos con parámetros para evitar DtypeWarning
+                df = pd.read_csv(
+                    path, 
+                    low_memory=False,  # Evita DtypeWarning
+                    dtype_backend='numpy_nullable'  # Mejor manejo de tipos
+                )
+                
+                # Log de cualquier warning capturado
+                if w:
+                    self.logger.warning(f"Warnings during data loading:")
+                    for warning in w:
+                        self.logger.warning(f"  {warning.category.__name__}: {warning.message}")
+            
             self.logger.info(f"Data loaded successfully")
             self.logger.info(f"Dataset shape: {df.shape[0]} rows × {df.shape[1]} columns")
             self.logger.info(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
@@ -328,7 +356,7 @@ class EDAPipeline:
         conversiones = vars_dict['conversiones_automaticas']
 
         # Logging adicional para el pipeline
-        self.logger.info(f"\\n📈 RESUMEN PARA PIPELINE:")
+        self.logger.info(f"\n📈 RESUMEN PARA PIPELINE:")
         self.logger.info(f"   ✅ Numéricas procesables: {len(num_cols)}")
         self.logger.info(f"   ✅ Categóricas procesables: {len(cat_cols)}")
         self.logger.info(f"   ❌ Variables descartadas: {len(descartadas)}")
@@ -336,14 +364,14 @@ class EDAPipeline:
             self.logger.info(f"   🔄 Conversiones automáticas: {len(conversiones)}")
 
         if descartadas:
-            self.logger.warning(f"\\n⚠️  Variables descartadas por calidad:")
+            self.logger.warning(f"\n⚠️  Variables descartadas por calidad:")
             for col in descartadas[:5]:
                 self.logger.warning(f"   • {col}")
             if len(descartadas) > 5:
                 self.logger.warning(f"   • ... y {len(descartadas)-5} más")
 
         if cat_cols:
-            self.logger.info(f"\\n🎯 Variables categóricas seleccionadas:")
+            self.logger.info(f"\n🎯 Variables categóricas seleccionadas:")
             for col in cat_cols[:5]:
                 n_unique = df[col].nunique()
                 self.logger.info(f"   • {col} ({n_unique} valores únicos)")
@@ -667,145 +695,155 @@ class EDAPipeline:
         total_steps = 10
         current_step = 0
 
-        try:
-            # PASO 1: Carga de datos
-            print_section_progress(current_step, total_steps, section_name='📥 Cargando datos', suffix='')
-            current_step += 1
-            df = self.load_data()
-            time.sleep(0.2)  # Pausa breve para ver la barra
-            print_section_progress(current_step, total_steps, section_name='📥 Cargando datos', suffix='Completado')
-
-            # PASO 2: Creación de target
-            print_section_progress(current_step, total_steps, section_name='🎯 Creando target', suffix='')
-            current_step += 1
-            df = self.build_target(df)
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='🎯 Creando target', suffix='Completado')
-
-            # PASO 3: Limpieza de columnas
-            print_section_progress(current_step, total_steps, section_name='🧹 Limpiando columnas', suffix='')
-            current_step += 1
-            df = self.clean_columns(df)
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='🧹 Limpiando columnas', suffix='Completado')
-
-            # PASO 4: Feature engineering
-            print_section_progress(current_step, total_steps, section_name='🔧 Feature Engineering', suffix='')
-            current_step += 1
-            df = self.derive_features(df)
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='🔧 Feature Engineering', suffix='Completado')
-
-            # PASO 5: Separación inteligente de variables
-            print_section_progress(current_step, total_steps, section_name='📊 Separando variables', suffix='')
-            current_step += 1
-            cat_cols, num_cols = self.separate_variables(df)
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='📊 Separando variables', suffix='Completado')
-
-            # PASO 6: Protección de int_rate
-            print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='')
-            current_step += 1
-            protection_config = self.config.get('int_rate_protection', {})
-            if protection_config.get('enable_protection', True):
-                protection_result = proteger_int_rate(
-                    df=df,
-                    variables_numericas=num_cols,
-                    variables_categoricas=cat_cols,
-                    protected_var=protection_config.get('protected_variable', 'int_rate'),
-                    correlation_threshold=protection_config.get('correlation_threshold', 0.7),
-                    verbose=False,  # Solo log, no prints en terminal
-                    logger=self.logger
-                )
-
-                # Actualizar listas con variables protegidas
-                num_cols = protection_result['variables_numericas_finales']
-                cat_cols = protection_result['variables_categoricas_finales']
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='Completado')
-
-            # PASO 7: Selección categórica
-            print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='')
-            current_step += 1
-            cat_sel = self.select_categorical_variables(df, cat_cols) if cat_cols else []
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='Completado')
-
-            # PASO 8: Selección numérica
-            print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='')
-            current_step += 1
-            num_sel = self.select_numeric_variables(df, num_cols)
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='Completado')
-
-            # PASO 9: PCA+LDA y ANOVA
-            print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='')
-            current_step += 1
-            vars_pca_lda = self.pca_lda_selection(df, num_sel)
-            vars_anova = self.anova_selection(df, num_sel)
-            time.sleep(0.2)
-            print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='Completado')
-
-            # PASO 10: Correlación y guardado
-            print_section_progress(current_step, total_steps, section_name='💾 Guardando resultados', suffix='')
-            current_step += 1
-            vars_corr_pca_lda = self.correlation_redundancy(df, vars_pca_lda, label='PCA+LDA') if vars_pca_lda else None
-            vars_corr_anova = self.correlation_redundancy(df, vars_anova, label='ANOVA') if vars_anova else None
-
-            # Combinar variables finales (numéricas + categóricas)
-            final_vars_pca_lda = (vars_corr_pca_lda + cat_sel) if vars_corr_pca_lda else cat_sel
-            final_vars_anova = (vars_corr_anova + cat_sel) if vars_corr_anova else cat_sel
-
-            self.save_outputs(df, final_vars_pca_lda, final_vars_anova)
-            time.sleep(0.2)
-            print_section_progress(total_steps, total_steps, section_name='💾 Guardando resultados', suffix='Completado')
-
-            # Mostrar resumen final en log
-            end_time = datetime.now()
-            duration = end_time - start_time
-
-            # Resumen solo en log (detallado)
-            self.logger.info(f"\n🎯 RESUMEN FINAL:")
-            self.logger.info(f"   📊 Dataset: {df.shape[0]:,} filas × {df.shape[1]} columnas")
-            self.logger.info(f"   ⏱️  Tiempo: {duration}")
-            self.logger.info(f"   ✅ Variables PCA+LDA: {len(final_vars_pca_lda)}")
-            self.logger.info(f"   ✅ Variables ANOVA: {len(final_vars_anova)}")
-            self.logger.info(f"   🛡️  int_rate PROTEGIDO: ✅")
-            self.logger.info(f"   📁 Archivos guardados: df_pca_lda.csv, df_anova.csv")
-            self.logger.info(f"   📋 Log detallado: log_EDA.txt")
-
-            self.logger.info("")
-            self.logger.info("=" * 80)
-            self.logger.info("EDA PIPELINE COMPLETED SUCCESSFULLY")
-            self.logger.info("=" * 80)
-            self.logger.info(f"Total execution time: {duration}")
-            self.logger.info(f"Final dataset shape: {df.shape}")
-            self.logger.info(f"Variables numéricas PCA+LDA: {len(vars_corr_pca_lda) if vars_corr_pca_lda else 0}")
-            self.logger.info(f"Variables numéricas ANOVA: {len(vars_corr_anova) if vars_corr_anova else 0}")
-            self.logger.info(f"Variables categóricas: {len(cat_sel)}")
-            self.logger.info(f"TOTAL PCA+LDA (Num + Cat): {len(final_vars_pca_lda)}")
-            self.logger.info(f"TOTAL ANOVA (Num + Cat): {len(final_vars_anova)}")
-            self.logger.info("=" * 80)
+        # Configurar captura global de warnings para el pipeline
+        with warnings.catch_warnings(record=True) as pipeline_warnings:
+            warnings.simplefilter("always")
             
-            # Resumen limpio en terminal
-            files_saved = []
-            if final_vars_pca_lda:
-                files_saved.append("df_pca_lda.csv")
-            if final_vars_anova:
-                files_saved.append("df_anova.csv")
+            try:
+                # PASO 1: Carga de datos
+                print_section_progress(current_step, total_steps, section_name='📥 Cargando datos', suffix='')
+                current_step += 1
+                df = self.load_data()
+                time.sleep(0.2)  # Pausa breve para ver la barra
+                print_section_progress(current_step, total_steps, section_name='📥 Cargando datos', suffix='Completado')
+
+                # PASO 2: Creación de target
+                print_section_progress(current_step, total_steps, section_name='🎯 Creando target', suffix='')
+                current_step += 1
+                df = self.build_target(df)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🎯 Creando target', suffix='Completado')
+
+                # PASO 3: Limpieza de columnas
+                print_section_progress(current_step, total_steps, section_name='🧹 Limpiando columnas', suffix='')
+                current_step += 1
+                df = self.clean_columns(df)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🧹 Limpiando columnas', suffix='Completado')
+
+                # PASO 4: Feature engineering
+                print_section_progress(current_step, total_steps, section_name='🔧 Feature Engineering', suffix='')
+                current_step += 1
+                df = self.derive_features(df)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🔧 Feature Engineering', suffix='Completado')
+
+                # PASO 5: Separación inteligente de variables
+                print_section_progress(current_step, total_steps, section_name='📊 Separando variables', suffix='')
+                current_step += 1
+                cat_cols, num_cols = self.separate_variables(df)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='📊 Separando variables', suffix='Completado')
+
+                # PASO 6: Protección de int_rate
+                print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='')
+                current_step += 1
+                protection_config = self.config.get('int_rate_protection', {})
+                if protection_config.get('enable_protection', True):
+                    protection_result = proteger_int_rate(
+                        df=df,
+                        variables_numericas=num_cols,
+                        variables_categoricas=cat_cols,
+                        protected_var=protection_config.get('protected_variable', 'int_rate'),
+                        correlation_threshold=protection_config.get('correlation_threshold', 0.7),
+                        verbose=False,  # Solo log, no prints en terminal
+                        logger=self.logger
+                    )
+
+                    # Actualizar listas con variables protegidas
+                    num_cols = protection_result['variables_numericas_finales']
+                    cat_cols = protection_result['variables_categoricas_finales']
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='Completado')
+
+                # PASO 7: Selección categórica
+                print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='')
+                current_step += 1
+                cat_sel = self.select_categorical_variables(df, cat_cols) if cat_cols else []
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='Completado')
+
+                # PASO 8: Selección numérica
+                print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='')
+                current_step += 1
+                num_sel = self.select_numeric_variables(df, num_cols)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='Completado')
+
+                # PASO 9: PCA+LDA y ANOVA
+                print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='')
+                current_step += 1
+                vars_pca_lda = self.pca_lda_selection(df, num_sel)
+                vars_anova = self.anova_selection(df, num_sel)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='Completado')
+
+                # PASO 10: Correlación y guardado
+                print_section_progress(current_step, total_steps, section_name='💾 Guardando resultados', suffix='')
+                current_step += 1
+                vars_corr_pca_lda = self.correlation_redundancy(df, vars_pca_lda, label='PCA+LDA') if vars_pca_lda else None
+                vars_corr_anova = self.correlation_redundancy(df, vars_anova, label='ANOVA') if vars_anova else None
+
+                # Combinar variables finales (numéricas + categóricas)
+                final_vars_pca_lda = (vars_corr_pca_lda + cat_sel) if vars_corr_pca_lda else cat_sel
+                final_vars_anova = (vars_corr_anova + cat_sel) if vars_corr_anova else cat_sel
+
+                self.save_outputs(df, final_vars_pca_lda, final_vars_anova)
+                time.sleep(0.2)
+                print_section_progress(total_steps, total_steps, section_name='💾 Guardando resultados', suffix='Completado')
+
+                # Mostrar resumen final en log
+                end_time = datetime.now()
+                duration = end_time - start_time
+
+                # Resumen solo en log (detallado)
+                self.logger.info(f"\n🎯 RESUMEN FINAL:")
+                self.logger.info(f"   📊 Dataset: {df.shape[0]:,} filas × {df.shape[1]} columnas")
+                self.logger.info(f"   ⏱️  Tiempo: {duration}")
+                self.logger.info(f"   ✅ Variables PCA+LDA: {len(final_vars_pca_lda)}")
+                self.logger.info(f"   ✅ Variables ANOVA: {len(final_vars_anova)}")
+                self.logger.info(f"   🛡️  int_rate PROTEGIDO: ✅")
+                self.logger.info(f"   📁 Archivos guardados: df_pca_lda.csv, df_anova.csv")
+                self.logger.info(f"   📋 Log detallado: log_EDA.txt")
+
+                # Log de warnings capturados durante la ejecución
+                if pipeline_warnings:
+                    self.logger.warning(f"\n⚠️  WARNINGS CAPTURADOS DURANTE LA EJECUCIÓN:")
+                    for warning in pipeline_warnings:
+                        self.logger.warning(f"  {warning.category.__name__}: {warning.message}")
                 
-            print_pipeline_summary(
-                execution_time=duration,
-                total_rows=df.shape[0],
-                pca_vars=len(final_vars_pca_lda),
-                anova_vars=len(final_vars_anova),
-                files_saved=files_saved
-            )
-            
-        except Exception as e:
-            self.logger.error(f"Pipeline failed with error: {str(e)}")
-            self.logger.error("=" * 80)
-            raise
+                self.logger.info("")
+                self.logger.info("=" * 80)
+                self.logger.info("EDA PIPELINE COMPLETED SUCCESSFULLY")
+                self.logger.info("=" * 80)
+                self.logger.info(f"Total execution time: {duration}")
+                self.logger.info(f"Final dataset shape: {df.shape}")
+                self.logger.info(f"Variables numéricas PCA+LDA: {len(vars_corr_pca_lda) if vars_corr_pca_lda else 0}")
+                self.logger.info(f"Variables numéricas ANOVA: {len(vars_corr_anova) if vars_corr_anova else 0}")
+                self.logger.info(f"Variables categóricas: {len(cat_sel)}")
+                self.logger.info(f"TOTAL PCA+LDA (Num + Cat): {len(final_vars_pca_lda)}")
+                self.logger.info(f"TOTAL ANOVA (Num + Cat): {len(final_vars_anova)}")
+                self.logger.info("=" * 80)
+                
+                # Resumen limpio en terminal
+                files_saved = []
+                if final_vars_pca_lda:
+                    files_saved.append("df_pca_lda.csv")
+                if final_vars_anova:
+                    files_saved.append("df_anova.csv")
+                    
+                print_pipeline_summary(
+                    execution_time=duration,
+                    total_rows=df.shape[0],
+                    pca_vars=len(final_vars_pca_lda),
+                    anova_vars=len(final_vars_anova),
+                    files_saved=files_saved
+                )
+                
+            except Exception as e:
+                self.logger.error(f"Pipeline failed with error: {str(e)}")
+                self.logger.error("=" * 80)
+                raise
 
 
 def main():

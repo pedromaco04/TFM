@@ -3,11 +3,11 @@
 # Control de modelos a ejecutar
 models:
   enable_logit: true           # Regresión logística
-  enable_gnb: false           # Gaussian Naive Bayes (deshabilitado por defecto)
-  enable_svm_linear: false    # SVM Lineal (deshabilitado por defecto)
-  enable_svm_linear_smart: false  # SVM Lineal con búsqueda (deshabilitado por defecto)
-  enable_svm_rbf_smart: false    # SVM RBF (deshabilitado por defecto - muy lento)
-  enable_mlp: false           # Red Neuronal MLP (deshabilitado por defecto)
+  enable_gnb: true            # Gaussian Naive Bayes
+  enable_svm_linear: true     # SVM Lineal
+  enable_svm_linear_smart: true  # SVM Lineal con búsqueda
+  enable_svm_rbf_smart: false    # SVM RBF (no ejecutar)
+  enable_mlp: true            # Red Neuronal MLP
 
 # Control de ejecución de etapas
 execution:
