@@ -303,7 +303,7 @@ class EDAPipeline:
             good_status=good,
             target_column=data_cfg['target_column'],
             drop_missing_status=bool(data_cfg.get('drop_missing_status', True)),
-            verbose=False  # Solo log, no prints en terminal
+            verbose=True  # Solo log, no prints en terminal
         )
         
         # Log target distribution
@@ -336,19 +336,19 @@ class EDAPipeline:
                 self.logger.info(f"  {col}: {pct*100:.2f}%")
             
             cols_muchos_nulos = cols_above_threshold.index.tolist()
-            df2 = safe_drop_columns(df2, cols_muchos_nulos, verbose=False)
+            df2 = safe_drop_columns(df2, cols_muchos_nulos, verbose=True)
             self.logger.info(f"After dropping null columns: {df2.shape}")
         
         if cfg.get('enable_drop_irrelevant_columns', True):
             drop_cols = cfg.get('drop_columns', [])
             self.logger.info(f"Dropping irrelevant columns ({len(drop_cols)}): {drop_cols}")
-            df2 = safe_drop_columns(df2, drop_cols, verbose=False)
+            df2 = safe_drop_columns(df2, drop_cols, verbose=True)
             self.logger.info(f"After dropping irrelevant columns: {df2.shape}")
         
         if cfg.get('enable_drop_ex_post', True):
             ex_post_cols = cfg.get('drop_ex_post_columns', [])
             self.logger.info(f"Dropping ex-post columns ({len(ex_post_cols)}): {ex_post_cols}")
-            df2 = safe_drop_columns(df2, ex_post_cols, verbose=False)
+            df2 = safe_drop_columns(df2, ex_post_cols, verbose=True)
             self.logger.info(f"After dropping ex-post columns: {df2.shape}")
         
         self._log_step_end("Clean columns", 3, f"Final shape: {df2.shape}")
@@ -362,7 +362,7 @@ class EDAPipeline:
         for feature, enabled in toggles.items():
             self.logger.info(f"  {feature}: {'✓' if enabled else '✗'}")
         
-        df2 = derive_features(df, toggles, verbose=False)
+        df2 = derive_features(df, toggles, verbose=True)
         
         # Log new columns added
         new_cols = set(df2.columns) - set(df.columns)
@@ -395,8 +395,7 @@ class EDAPipeline:
             max_unique_cats=max_unique_cats,
             max_concentration=max_concentration,
             protected_variables=protected_variables,
-            verbose=False,  # Solo log, no prints en terminal
-            logger=self.logger
+            verbose=True, logger=self.logger  # Solo log, no prints en terminal
         )
 
         cat_cols = vars_dict['categoricas']
@@ -839,8 +838,7 @@ class EDAPipeline:
                         variables_categoricas=cat_cols,
                         protected_var=protection_config.get('protected_variable', 'int_rate'),
                         correlation_threshold=protection_config.get('correlation_threshold', 0.7),
-                        verbose=False,  # Solo log, no prints en terminal
-                        logger=self.logger
+                        verbose=True, logger=self.logger  # Solo log, no prints en terminal
                     )
 
                     # Actualizar listas con variables protegidas
