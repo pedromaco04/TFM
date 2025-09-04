@@ -1,0 +1,110 @@
+{
+  "woe_mappings": {
+    "grade": {
+      "A": 1.2917973096665152,
+      "B": 0.47758751298870067,
+      "C": -0.1554644623445049,
+      "D": -0.5205656067362741,
+      "E": -0.8916824322101852,
+      "F": -1.0652156277504554,
+      "G": -1.3142202833143461
+    },
+    "debt_settlement_flag": {
+      "N": 0.1253807767356233,
+      "Y": -10.07103317111831
+    }
+  },
+  "category_stats": {
+    "grade": {
+      "A": {
+        "good_count": 136838,
+        "bad_count": 15528,
+        "total_count": 152366,
+        "good_rate": 0.19482811398794056,
+        "bad_rate": 0.05353418348174732,
+        "woe": 1.2917973096665152
+      },
+      "B": {
+        "good_count": 223931,
+        "bad_count": 57364,
+        "total_count": 281295,
+        "good_rate": 0.3188295092937332,
+        "bad_rate": 0.1977629306332675,
+        "woe": 0.47758751298870067
+      },
+      "C": {
+        "good_count": 193201,
+        "bad_count": 93211,
+        "total_count": 286412,
+        "good_rate": 0.2750767062240605,
+        "bad_rate": 0.32134472380518986,
+        "woe": -0.1554644623445049
+      },
+      "D": {
+        "good_count": 94709,
+        "bad_count": 65828,
+        "total_count": 160537,
+        "good_rate": 0.1348456264994198,
+        "bad_rate": 0.22694239606711553,
+        "woe": -0.5205656067362741
+      },
+      "E": {
+        "good_count": 37927,
+        "bad_count": 38207,
+        "total_count": 76134,
+        "good_rate": 0.05400046984786896,
+        "bad_rate": 0.13171956823768302,
+        "woe": -0.8916824322101852
+      },
+      "F": {
+        "good_count": 12628,
+        "bad_count": 15132,
+        "total_count": 27760,
+        "good_rate": 0.017980223676061252,
+        "bad_rate": 0.05216898164906728,
+        "woe": -1.0652156277504554
+      },
+      "G": {
+        "good_count": 3120,
+        "bad_count": 4796,
+        "total_count": 7916,
+        "good_rate": 0.004442909924468396,
+        "bad_rate": 0.016535834824368163,
+        "woe": -1.3142202833143461
+      }
+    },
+    "debt_settlement_flag": {
+      "N": {
+        "good_count": 702351,
+        "bad_count": 255884,
+        "total_count": 958235,
+        "good_rate": 0.9999950167650262,
+        "bad_rate": 0.8821565362485219,
+        "woe": 0.1253807767356233
+      },
+      "Y": {
+        "good_count": 3,
+        "bad_count": 34182,
+        "total_count": 34185,
+        "good_rate": 4.983234973766827e-06,
+        "bad_rate": 0.11784346375147811,
+        "woe": -10.07103317111831
+      }
+    }
+  },
+  "target_col": "flg_target",
+  "min_samples": 30,
+  "final_vars": [
+    "term",
+    "acc_open_past_24mths",
+    "num_bc_tl",
+    "fico_range_low",
+    "int_rate",
+    "mort_acc",
+    "dti",
+    "mths_since_recent_inq",
+    "grade_woe",
+    "debt_settlement_flag_woe"
+  ],
+  "timestamp": "2025-09-04T03:26:05.334657"
+}
