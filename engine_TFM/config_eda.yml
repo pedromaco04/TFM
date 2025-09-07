@@ -53,6 +53,7 @@ cleaning:
 
 features:
   derive:
+    # Variables básicas existentes
     enable_term_integer: true
     enable_emp_length_months: true
     enable_ratio_loan_income: true
@@ -60,17 +61,53 @@ features:
     enable_fico_avg: true
     enable_revol_util_ratio: true
     enable_installment_income_ratio: true
+    
+    # NUEVAS VARIABLES PARA MEJORAR AUC (TEMPORALMENTE DESHABILITADAS PARA DEBUG)
+    # 1. Variables de capacidad de pago
+    enable_debt_to_income_enhanced: true
+    enable_payment_capacity_score: true
+    
+    # 2. Variables de historial crediticio
+    enable_credit_history_score: true
+    enable_credit_utilization_risk: true
+    
+    # 3. Variables de comportamiento financiero
+    enable_financial_behavior_score: true
+    enable_credit_seeking_behavior: true
+    
+    # 4. Variables de estabilidad
+    enable_employment_stability: true
+    enable_loan_risk_profile: true
+    
+    # 5. Variables de interacción
+    enable_fico_dti_interaction: true
+    enable_income_grade_interaction: true
+    
+    # 6. Variables de ratios financieros avanzados
+    enable_advanced_financial_ratios: true
+    
+    # 7. Variables de tendencias temporales
+    enable_temporal_trends: true
+
+# Configuración para preprocesamiento de variables numéricas
+preprocessing:
+  enable_missing_imputation: true        # Habilitar imputación de valores faltantes
+  imputation_strategy: "median"          # Estrategia: "median", "mean", "mode"
+  enable_winsorization: true             # Habilitar winsorización (topeo) de outliers
+  winsorization_percentiles:             # Percentiles para topeo
+    lower: 0.01                          # Percentil inferior (1%)
+    upper: 0.99                          # Percentil superior (99%)
 
 selection:
   filter_missing:
     enable: true
-    threshold: 0.6
+    threshold: 0.8
     rescue_by_correlation: true
     min_corr: 0.1
     min_samples: 30
   filter_cv:
     enable: true
-    threshold: 0.08
+    threshold: 0.1
     rescue_by_correlation: true
     min_corr: 0.1
     min_samples: 30
@@ -118,6 +155,14 @@ int_rate_protection:
   correlation_threshold: 0.8         # Umbral de correlación alta con int_rate
   priority_over_correlated: true     # Priorizar int_rate sobre variables correlacionadas
   force_include_int_rate: true       # Forzar inclusión de int_rate en resultados finales
+
+# Configuración para análisis de sensibilidad real de tasa de interés
+sensitivity_analysis:
+  enable_real_sensitivity: true      # Habilitar análisis de sensibilidad real
+  step: 2.0                         # Paso para los rangos de tasa (en %)
+  min_samples: 100                  # Mínimo número de observaciones por grupo
+  confidence_level: 0.95            # Nivel de confianza para intervalos (0.95 = 95%)
+  save_plots: true                  # Guardar gráficos de sensibilidad
 
 logging:
   verbose: true

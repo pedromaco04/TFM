@@ -24,6 +24,7 @@ from engine_TFM.utils import (
     prepare_model_dataframe,
     ModelComparator,
     WOETransformer,
+    analyze_real_int_rate_sensitivity,
 )
 
 # Suprimir warnings en terminal; se capturan y registran en el log
@@ -86,7 +87,7 @@ def main() -> None:
     config_path = "engine_TFM/config_modeling.yml"
     config = load_config(config_path)
     logger = setup_logging(config_path)
-
+    
     base_dir = os.path.dirname(os.path.abspath(__file__))
     csv_pca_lda = os.path.join(base_dir, "df_pca_lda.csv")
     csv_anova = os.path.join(base_dir, "df_anova.csv")
@@ -97,6 +98,7 @@ def main() -> None:
 
     # Configuración de pasos dinámicos según modelos habilitados
     models_cfg = config.get("models", {})
+    sensitivity_cfg = config.get("sensitivity_analysis", {})
     steps = [
         (True, "📥 Cargando datos"),
         (True, "🔢 Preparando datos"),
@@ -106,6 +108,7 @@ def main() -> None:
         (models_cfg.get("enable_svm_linear_smart", False), "🧷 SVM Lineal (smart)"),
         (models_cfg.get("enable_mlp", False), "🧠 Entrenando MLP"),
         (config.get("execution", {}).get("run_comparator", True), "💾 Guardando resultados"),
+        (sensitivity_cfg.get("enable_real_sensitivity", True), "📊 Análisis de sensibilidad real"),
     ]
     enabled_steps = [s for enabled, s in steps if enabled]
     total_steps = len(enabled_steps)
@@ -146,7 +149,7 @@ def main() -> None:
         # Obtener todas las variables (excluyendo target)
         all_vars_pca_lda = df_pca_lda.columns.tolist()[:-1]
         all_vars_anova = df_anova.columns.tolist()[:-1]
-        
+
         # Detectar si ya hay variables WOE (del EDA)
         woe_vars_pca_lda = [c for c in all_vars_pca_lda if c.endswith('_woe')]
         woe_vars_anova = [c for c in all_vars_anova if c.endswith('_woe')]
@@ -252,8 +255,8 @@ def main() -> None:
                         logger.info(line)
             ModelingEngine.save_model(model_pca_lda, os.path.join(models_dir, "logit_pca_lda.pkl"))
             ModelingEngine.save_model(model_anova, os.path.join(models_dir, "logit_anova.pkl"))
-            logger.info(f"LOGIT | PCA+LDA AUC: {metrics_pca_lda['AUC_test']:.4f}")
-            logger.info(f"LOGIT | ANOVA   AUC: {metrics_anova['AUC_test']:.4f}")
+            logger.info(f"LOGIT | PCA+LDA AUC: {metrics_pca_lda['AUC_test']:.4f} | GINI: {metrics_pca_lda['GINI_test']:.4f}")
+            logger.info(f"LOGIT | ANOVA   AUC: {metrics_anova['AUC_test']:.4f} | GINI: {metrics_anova['GINI_test']:.4f}")
             logger.info(f"[TIMER] LOGIT: {time.perf_counter()-t0:.2f}s")
             time.sleep(0.1)
             print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step-1], suffix="Completado")
@@ -295,8 +298,8 @@ def main() -> None:
                     logger.info(line)
             ModelingEngine.save_model(gnb_pca_lda, os.path.join(models_dir, "gnb_pca_lda.pkl"))
             ModelingEngine.save_model(gnb_anova, os.path.join(models_dir, "gnb_anova.pkl"))
-            logger.info(f"GNB | PCA+LDA AUC: {gnb_metrics_pca_lda['AUC_test']:.4f}")
-            logger.info(f"GNB | ANOVA   AUC: {gnb_metrics_anova['AUC_test']:.4f}")
+            logger.info(f"GNB | PCA+LDA AUC: {gnb_metrics_pca_lda['AUC_test']:.4f} | GINI: {gnb_metrics_pca_lda['GINI_test']:.4f}")
+            logger.info(f"GNB | ANOVA   AUC: {gnb_metrics_anova['AUC_test']:.4f} | GINI: {gnb_metrics_anova['GINI_test']:.4f}")
             logger.info(f"[TIMER] GNB: {time.perf_counter()-t0:.2f}s")
             print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step-1], suffix="Completado")
 
@@ -338,8 +341,8 @@ def main() -> None:
             # Guardar (para trazabilidad; el comparador usa los smart-search si existen)
             ModelingEngine.save_model(svm_lin_pca_lda, os.path.join(models_dir, "svm_linear_pca_lda.pkl"))
             ModelingEngine.save_model(svm_lin_anova, os.path.join(models_dir, "svm_linear_anova.pkl"))
-            logger.info(f"SVM Linear | PCA+LDA AUC: {svm_lin_metrics_pca_lda['AUC_test']:.4f}")
-            logger.info(f"SVM Linear | ANOVA   AUC: {svm_lin_metrics_anova['AUC_test']:.4f}")
+            logger.info(f"SVM Linear | PCA+LDA AUC: {svm_lin_metrics_pca_lda['AUC_test']:.4f} | GINI: {svm_lin_metrics_pca_lda['GINI_test']:.4f}")
+            logger.info(f"SVM Linear | ANOVA   AUC: {svm_lin_metrics_anova['AUC_test']:.4f} | GINI: {svm_lin_metrics_anova['GINI_test']:.4f}")
             logger.info(f"[TIMER] SVM Linear: {time.perf_counter()-t0:.2f}s")
             print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step-1], suffix="Completado")
 
@@ -381,8 +384,8 @@ def main() -> None:
             # Guardar con nombres esperados por el comparador
             ModelingEngine.save_model(svm_best_pca_lda, os.path.join(models_dir, "svm_best_pca_lda.pkl"))
             ModelingEngine.save_model(svm_best_anova, os.path.join(models_dir, "svm_best_anova.pkl"))
-            logger.info(f"SVM best | PCA+LDA AUC: {svm_best_metrics_pca_lda['AUC_test']:.4f} | params: {best_cfg_pca}")
-            logger.info(f"SVM best | ANOVA   AUC: {svm_best_metrics_anova['AUC_test']:.4f} | params: {best_cfg_anova}")
+            logger.info(f"SVM best | PCA+LDA AUC: {svm_best_metrics_pca_lda['AUC_test']:.4f} | GINI: {svm_best_metrics_pca_lda['GINI_test']:.4f} | params: {best_cfg_pca}")
+            logger.info(f"SVM best | ANOVA   AUC: {svm_best_metrics_anova['AUC_test']:.4f} | GINI: {svm_best_metrics_anova['GINI_test']:.4f} | params: {best_cfg_anova}")
             logger.info(f"[TIMER] SVM Linear smart: {time.perf_counter()-t0:.2f}s")
             print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step-1], suffix="Completado")
 
@@ -423,8 +426,8 @@ def main() -> None:
                     logger.info(line)
             ModelingEngine.save_model(mlp_pca_lda, os.path.join(models_dir, "mlp_pca_lda.pkl"))
             ModelingEngine.save_model(mlp_anova, os.path.join(models_dir, "mlp_anova.pkl"))
-            logger.info(f"MLP | PCA+LDA AUC: {mlp_metrics_pca_lda['AUC_test']:.4f}")
-            logger.info(f"MLP | ANOVA   AUC: {mlp_metrics_anova['AUC_test']:.4f}")
+            logger.info(f"MLP | PCA+LDA AUC: {mlp_metrics_pca_lda['AUC_test']:.4f} | GINI: {mlp_metrics_pca_lda['GINI_test']:.4f}")
+            logger.info(f"MLP | ANOVA   AUC: {mlp_metrics_anova['AUC_test']:.4f} | GINI: {mlp_metrics_anova['GINI_test']:.4f}")
             logger.info(f"[TIMER] MLP: {time.perf_counter()-t0:.2f}s")
             print_section_progress(current_step, total_steps, section_name=enabled_steps[current_step-1], suffix="Completado")
 
@@ -446,11 +449,121 @@ def main() -> None:
         logger.info("RESULTADOS FINALES - COMPARATIVA DE MODELOS:")
         logger.info("=" * 60)
         for _, row in df_cmp.iterrows():
-            logger.info(f"{row['Modelo']}: AUC={row['AUC']:.4f} | PR-AUC={row['PR_AUC(AP)']:.4f} | Brier={row['Brier']:.4f}")
+            logger.info(f"{row['Modelo']}: AUC={row['AUC']:.4f} | GINI={row['GINI']:.4f} | PR-AUC={row['PR_AUC(AP)']:.4f} | Brier={row['Brier']:.4f}")
         logger.info(f"Tabla comparativa guardada en: {out_csv}")
         logger.info(f"[TIMER] Comparativa: {time.perf_counter()-t0:.2f}s")
         time.sleep(0.1)
         print_section_progress(current_step, total_steps, section_name="💾 Guardando resultados", suffix="Completado")
+
+        # Paso adicional: Análisis de sensibilidad real de tasa de interés para cada modelo
+        sensitivity_cfg = config.get("sensitivity_analysis", {})
+        if sensitivity_cfg.get("enable_real_sensitivity", True):
+            print_section_progress(current_step, total_steps, section_name="📊 Análisis de sensibilidad real", suffix="")
+            current_step += 1
+            t0 = time.perf_counter()
+            
+            # Cargar datos originales para análisis de sensibilidad
+            original_data_path = os.path.join(base_dir, "Loan_data.csv")
+            if os.path.exists(original_data_path):
+                logger.info("ANÁLISIS DE SENSIBILIDAD REAL - TASA DE INTERÉS POR MODELO")
+                logger.info("=" * 60)
+                
+                # Cargar datos originales
+                df_original = pd.read_csv(original_data_path, low_memory=False)
+                
+                # Construir target binario usando la misma lógica que en EDA
+                good_status = config.get("data", {}).get("allowed_status", {}).get("good", ["Fully Paid"])
+                bad_status = config.get("data", {}).get("allowed_status", {}).get("bad", ["Charged Off", "Default"])
+                
+                # Crear target binario
+                good_set = set(good_status)
+                bad_set = set(bad_status)
+                mask = df_original["loan_status"].isin(good_set | bad_set)
+                df_original = df_original.loc[mask].copy().reset_index(drop=True)
+                df_original["flg_target"] = df_original["loan_status"].apply(
+                    lambda x: 1 if x in bad_set else (0 if x in good_set else np.nan)
+                )
+                
+                # Configuración del análisis
+                step = sensitivity_cfg.get("step", 2.0)
+                min_samples = sensitivity_cfg.get("min_samples", 100)
+                confidence_level = sensitivity_cfg.get("confidence_level", 0.95)
+                
+                # Lista de modelos entrenados para análisis de sensibilidad
+                models_to_analyze = []
+                
+                # Agregar modelos según los que se entrenaron
+                if models_cfg.get("enable_logit", True):
+                    models_to_analyze.extend([
+                        ("LOGIT_PCA_LDA", "logit_pca_lda.pkl", "PCA+LDA"),
+                        ("LOGIT_ANOVA", "logit_anova.pkl", "ANOVA")
+                    ])
+                
+                if models_cfg.get("enable_gnb", False):
+                    models_to_analyze.extend([
+                        ("GNB_PCA_LDA", "gnb_pca_lda.pkl", "PCA+LDA"),
+                        ("GNB_ANOVA", "gnb_anova.pkl", "ANOVA")
+                    ])
+                
+                if models_cfg.get("enable_svm_linear_smart", False):
+                    models_to_analyze.extend([
+                        ("SVM_BEST_PCA_LDA", "svm_best_pca_lda.pkl", "PCA+LDA"),
+                        ("SVM_BEST_ANOVA", "svm_best_anova.pkl", "ANOVA")
+                    ])
+                
+                if models_cfg.get("enable_mlp", False):
+                    models_to_analyze.extend([
+                        ("MLP_PCA_LDA", "mlp_pca_lda.pkl", "PCA+LDA"),
+                        ("MLP_ANOVA", "mlp_anova.pkl", "ANOVA")
+                    ])
+                
+                # Ejecutar análisis de sensibilidad para cada modelo
+                for model_key, model_file, dataset_type in models_to_analyze:
+                    model_path = os.path.join(models_dir, model_file)
+                    if os.path.exists(model_path):
+                        logger.info(f"Generando análisis de sensibilidad para {model_key}")
+                        
+                        # Cargar el modelo
+                        model = ModelingEngine.load_model(model_path)
+                        
+                        # Usar datos originales para análisis de sensibilidad
+                        if 'int_rate' in df_original.columns:
+                            # Crear dataset con int_rate y target para sensibilidad
+                            df_for_sensitivity = df_original[['int_rate', 'flg_target']].copy()
+                            
+                            # Ejecutar análisis de sensibilidad
+                            save_path = os.path.join(images_dir, f"sensibilidad_real_{model_key.lower()}.png")
+                            df_sensitivity = analyze_real_int_rate_sensitivity(
+                                df=df_for_sensitivity,
+                                model=model,
+                                target_col="flg_target",
+                                int_rate_col="int_rate",
+                                step=step,
+                                min_samples=min_samples,
+                                confidence_level=confidence_level,
+                                save_path=save_path,
+                                model_name=f"{model_key} ({dataset_type})",
+                                verbose=True,
+                                logger=logger
+                            )
+                            
+                            # Guardar resultados en CSV
+                            if not df_sensitivity.empty:
+                                sensitivity_csv = os.path.join(reports_dir, f"sensibilidad_real_{model_key.lower()}.csv")
+                                df_sensitivity.to_csv(sensitivity_csv, index=False)
+                                logger.info(f"Resultados de sensibilidad guardados en: {sensitivity_csv}")
+                        else:
+                            logger.warning(f"Variable 'int_rate' no encontrada para {model_key}")
+                    else:
+                        logger.warning(f"Modelo {model_file} no encontrado, saltando análisis de sensibilidad")
+                
+                logger.info(f"[TIMER] Análisis de sensibilidad: {time.perf_counter()-t0:.2f}s")
+            else:
+                logger.warning(f"Archivo de datos originales no encontrado: {original_data_path}")
+                logger.warning("Saltando análisis de sensibilidad real")
+            
+            time.sleep(0.1)
+            print_section_progress(current_step, total_steps, section_name="📊 Análisis de sensibilidad real", suffix="Completado")
 
         if pipeline_warnings:
             logger.warning("\n⚠️  WARNINGS CAPTURADOS DURANTE LA EJECUCIÓN:")

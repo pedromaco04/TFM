@@ -13,7 +13,7 @@ models:
 execution:
   run_training: true
   run_plots: false
-  run_sensitivity: false
+  run_sensitivity: false  # Sensibilidad simulada APAGADA
   run_comparator: true
 
 # Configuración de datos

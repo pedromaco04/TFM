@@ -16,6 +16,8 @@ from engine_TFM.utils import (
     build_binary_target,
     derive_features,
     proteger_int_rate,
+    winsorize_variables,
+    impute_missing_values,
 )
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -112,9 +114,13 @@ class EDAPipeline:
     """
 
     def __init__(self, config_path: str):
+        # Obtener la ruta del directorio donde está TFM_EDA.py
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        loan_data_path = os.path.join(current_dir, 'Loan_data.csv')
+        
         defaults = {
             'data': {
-                'input_csv': 'Loan_data.csv',
+                'input_csv': loan_data_path,
                 'status_column': 'loan_status',
                 'target_column': 'flg_target',
                 'allowed_status': {'good': [], 'bad': []},
@@ -133,6 +139,7 @@ class EDAPipeline:
             },
             'features': {
                 'derive': {
+                    # Variables básicas existentes
                     'enable_term_integer': True,
                     'enable_emp_length_months': True,
                     'enable_ratio_loan_income': True,
@@ -140,7 +147,40 @@ class EDAPipeline:
                     'enable_fico_avg': True,
                     'enable_revol_util_ratio': True,
                     'enable_installment_income_ratio': True,
+                    
+                    # NUEVAS VARIABLES PARA MEJORAR AUC
+                    # 1. Variables de capacidad de pago
+                    'enable_debt_to_income_enhanced': True,
+                    'enable_payment_capacity_score': True,
+                    
+                    # 2. Variables de historial crediticio
+                    'enable_credit_history_score': True,
+                    'enable_credit_utilization_risk': True,
+                    
+                    # 3. Variables de comportamiento financiero
+                    'enable_financial_behavior_score': True,
+                    'enable_credit_seeking_behavior': True,
+                    
+                    # 4. Variables de estabilidad
+                    'enable_employment_stability': True,
+                    'enable_loan_risk_profile': True,
+                    
+                    # 5. Variables de interacción
+                    'enable_fico_dti_interaction': True,
+                    'enable_income_grade_interaction': True,
+                    
+                    # 6. Variables de ratios financieros avanzados
+                    'enable_advanced_financial_ratios': True,
+                    
+                    # 7. Variables de tendencias temporales
+                    'enable_temporal_trends': True,
                 }
+            },
+            'preprocessing': {
+                'enable_missing_imputation': True,
+                'imputation_strategy': 'median',
+                'enable_winsorization': True,
+                'winsorization_percentiles': {'lower': 0.01, 'upper': 0.99},
             },
             'selection': {
                 'filter_missing': {'enable': True, 'threshold': 0.5, 'rescue_by_correlation': True, 'min_corr': 0.1, 'min_samples': 30},
@@ -431,8 +471,50 @@ class EDAPipeline:
                           f"Numéricas: {len(num_cols)}, Categóricas: {len(cat_cols)}, Descartadas: {len(descartadas)}")
         return cat_cols, num_cols
 
+    def preprocess_numeric_variables(self, df: pd.DataFrame, num_cols: List[str]) -> pd.DataFrame:
+        """
+        Aplica preprocesamiento a variables numéricas: imputación de missings y winsorización.
+        Este paso se ejecuta DESPUÉS de la creación de variables y ANTES de los filtros.
+        """
+        self._log_step_start("Preprocessing numeric variables", 6)
+        
+        cfg = self.config.get('preprocessing', {})
+        
+        # PASO 1: Imputación de valores faltantes
+        if cfg.get('enable_missing_imputation', True):
+            strategy = cfg.get('imputation_strategy', 'median')
+            self.logger.info(f"Applying missing value imputation (strategy: {strategy})")
+            
+            df = impute_missing_values(
+                df, 
+                num_cols, 
+                strategy=strategy,
+                verbose=True, 
+                logger=self.logger
+            )
+        
+        # PASO 2: Winsorización (topeo) de outliers
+        if cfg.get('enable_winsorization', True):
+            percentiles = cfg.get('winsorization_percentiles', {'lower': 0.01, 'upper': 0.99})
+            lower_pct = percentiles.get('lower', 0.01)
+            upper_pct = percentiles.get('upper', 0.99)
+            
+            self.logger.info(f"Applying winsorization (percentiles: {lower_pct*100:.1f}% - {upper_pct*100:.1f}%)")
+            
+            df = winsorize_variables(
+                df,
+                num_cols,
+                lower_percentile=lower_pct,
+                upper_percentile=upper_pct,
+                verbose=True,
+                logger=self.logger
+            )
+        
+        self._log_step_end("Preprocessing numeric variables", 6, f"Processed {len(num_cols)} variables")
+        return df
+
     def select_numeric_variables(self, df: pd.DataFrame, num_cols: List[str]) -> List[str]:
-        self._log_step_start("Numeric summary and filtering", 6)
+        self._log_step_start("Numeric summary and filtering", 7)
 
         # PROTEGER int_rate de cualquier filtro
         protected_var = self.config.get('int_rate_protection', {}).get('protected_variable', 'int_rate')
@@ -492,15 +574,15 @@ class EDAPipeline:
             self.logger.info(f"✅ Variable protegida '{protected_var}' mantenida en selección")
 
         self.logger.info(f"Final selected numerical variables: {selected}")
-        self._log_step_end("Numeric summary and filtering", 6, f"Selected: {len(selected)}")
+        self._log_step_end("Numeric summary and filtering", 7, f"Selected: {len(selected)}")
         return selected
 
     def select_categorical_variables(self, df: pd.DataFrame, cat_cols: List[str]) -> Tuple[List[str], pd.DataFrame]:
-        self._log_step_start("Categorical variables selection", 6.5)
+        self._log_step_start("Categorical variables selection", 7.5)
 
         if not cat_cols:
             self.logger.info("No categorical variables to process")
-            self._log_step_end("Categorical variables selection", 6.5, "No variables")
+            self._log_step_end("Categorical variables selection", 7.5, "No variables")
             return [], df
 
         # Obtener configuración
@@ -536,7 +618,7 @@ class EDAPipeline:
                 self.logger.info(f"   ❌ Variables descartadas: {len(cat_cols) - len(selected_vars)}")
                 self.logger.info(f"   🏆 Variables WOE finales: {woe_columns}")
                 
-                self._log_step_end("Categorical variables selection", 6.5, f"Selected: {len(woe_columns)} WOE variables")
+                self._log_step_end("Categorical variables selection", 7.5, f"Selected: {len(woe_columns)} WOE variables")
                 return woe_columns, df_woe
             else:
                 self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
@@ -544,7 +626,7 @@ class EDAPipeline:
                 self.logger.info(f"   ❌ Variables seleccionadas: 0 (ninguna superó IV threshold)")
                 self.logger.info(f"   ❌ Variables descartadas: {len(cat_cols)}")
                 
-                self._log_step_end("Categorical variables selection", 6.5, "No variables selected")
+                self._log_step_end("Categorical variables selection", 7.5, "No variables selected")
                 return [], df
         else:
             # Solo Chi-square si WOE/IV está deshabilitado
@@ -561,11 +643,11 @@ class EDAPipeline:
             if selected_vars:
                 self.logger.info(f"   🏆 Variables finales: {selected_vars}")
 
-            self._log_step_end("Categorical variables selection", 6.5, f"Selected: {len(selected_vars)}")
+            self._log_step_end("Categorical variables selection", 7.5, f"Selected: {len(selected_vars)}")
             return selected_vars, df
 
     def pca_lda_selection(self, df: pd.DataFrame, num_cols: List[str]) -> Optional[List[str]]:
-        self._log_step_start("PCA diagnostics and LDA importance", 7)
+        self._log_step_start("PCA diagnostics and LDA importance", 8)
 
         # PROTEGER int_rate en PCA+LDA
         protected_var = self.config.get('int_rate_protection', {}).get('protected_variable', 'int_rate')
@@ -637,11 +719,11 @@ class EDAPipeline:
         else:
             self.logger.warning("No variables selected by LDA importance")
 
-        self._log_step_end("PCA diagnostics and LDA importance", 7, f"Selected: {len(vars_pca_lda) if vars_pca_lda else 0}")
+        self._log_step_end("PCA diagnostics and LDA importance", 8, f"Selected: {len(vars_pca_lda) if vars_pca_lda else 0}")
         return vars_pca_lda
 
     def anova_selection(self, df: pd.DataFrame, num_cols: List[str]) -> Optional[List[str]]:
-        self._log_step_start("ANOVA F-test selection", 8)
+        self._log_step_start("ANOVA F-test selection", 9)
 
         # PROTEGER int_rate en ANOVA
         protected_var = self.config.get('int_rate_protection', {}).get('protected_variable', 'int_rate')
@@ -681,15 +763,15 @@ class EDAPipeline:
         else:
             self.logger.warning("No variables selected by ANOVA")
 
-        self._log_step_end("ANOVA F-test selection", 8, f"Selected: {len(en_anova_vars) if en_anova_vars else 0}")
+        self._log_step_end("ANOVA F-test selection", 9, f"Selected: {len(en_anova_vars) if en_anova_vars else 0}")
         return en_anova_vars
 
     def correlation_redundancy(self, df: pd.DataFrame, vars_list: Optional[List[str]], label: str) -> Optional[List[str]]:
-        self._log_step_start(f"Correlation redundancy removal - {label}", 9)
+        self._log_step_start(f"Correlation redundancy removal - {label}", 10)
 
         if not vars_list:
             self.logger.info(f"No variables provided for {label} correlation analysis")
-            self._log_step_end(f"Correlation redundancy removal - {label}", 9, "No variables")
+            self._log_step_end(f"Correlation redundancy removal - {label}", 10, "No variables")
             return None
 
         # PROTEGER int_rate en análisis de correlación
@@ -700,7 +782,7 @@ class EDAPipeline:
         cfg = self.config['selection']['correlation_redundancy']
         if not cfg.get('enable', True):
             self.logger.info("Correlation redundancy removal skipped")
-            self._log_step_end(f"Correlation redundancy removal - {label}", 9, "Skipped")
+            self._log_step_end(f"Correlation redundancy removal - {label}", 10, "Skipped")
             return vars_list
         
         threshold = float(cfg.get('threshold', 0.6))
@@ -728,11 +810,11 @@ class EDAPipeline:
         self.logger.info(f"Removed {removed_count} redundant variables")
         self.logger.info(f"Remaining variables: {vars_corr}")
 
-        self._log_step_end(f"Correlation redundancy removal - {label}", 9, f"Remaining: {len(vars_corr)}")
+        self._log_step_end(f"Correlation redundancy removal - {label}", 10, f"Remaining: {len(vars_corr)}")
         return vars_corr
 
     def save_outputs(self, df: pd.DataFrame, vars_pca_lda: Optional[List[str]], vars_anova: Optional[List[str]]) -> None:
-        self._log_step_start("Save outputs", 10)
+        self._log_step_start("Save outputs", 11)
 
         self._ensure_output_dir()
         out_dir = self.config['data']['output_dir']
@@ -773,7 +855,7 @@ class EDAPipeline:
             if protected_var in vars_anova:
                 self.logger.info(f"  ✅ {protected_var} INCLUIDA en dataset final")
 
-        self._log_step_end("Save outputs", 10, f"Files saved: {len([v for v in [vars_pca_lda, vars_anova] if v])}")
+        self._log_step_end("Save outputs", 11, f"Files saved: {len([v for v in [vars_pca_lda, vars_anova] if v])}")
 
     # ------------------------------- Runner --------------------------------
     def run(self) -> None:
@@ -785,7 +867,7 @@ class EDAPipeline:
         self.logger.info("Starting EDA Pipeline execution...")
         start_time = datetime.now()
 
-        total_steps = 10
+        total_steps = 11
         current_step = 0
 
         # Configurar captura global de warnings para el pipeline
@@ -828,7 +910,14 @@ class EDAPipeline:
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='📊 Separando variables', suffix='Completado')
 
-                # PASO 6: Protección de int_rate
+                # PASO 6: Preprocesamiento de variables numéricas (IMPUTACIÓN + TOPEO)
+                print_section_progress(current_step, total_steps, section_name='🔧 Preprocesando numéricas', suffix='')
+                current_step += 1
+                df = self.preprocess_numeric_variables(df, num_cols)
+                time.sleep(0.2)
+                print_section_progress(current_step, total_steps, section_name='🔧 Preprocesando numéricas', suffix='Completado')
+
+                # PASO 7: Protección de int_rate
                 print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='')
                 current_step += 1
                 protection_config = self.config.get('int_rate_protection', {})
@@ -848,21 +937,21 @@ class EDAPipeline:
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='🛡️ Protegiendo int_rate', suffix='Completado')
 
-                # PASO 7: Selección categórica → Conversión a WOE
+                # PASO 8: Selección categórica → Conversión a WOE
                 print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='')
                 current_step += 1
                 cat_woe_cols, df = self.select_categorical_variables(df, cat_cols) if cat_cols else ([], df)
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='📋 Selección categórica', suffix='Completado')
 
-                # PASO 8: Selección numérica
+                # PASO 9: Selección numérica (FILTROS POR MISSINGS Y CV)
                 print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='')
                 current_step += 1
                 num_sel = self.select_numeric_variables(df, num_cols)
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='🔢 Selección numérica', suffix='Completado')
 
-                # PASO 9: PCA+LDA y ANOVA (incluye numéricas + WOE)
+                # PASO 10: PCA+LDA y ANOVA (incluye numéricas + WOE)
                 print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='')
                 current_step += 1
                 # Combinar variables numéricas + WOE para ambos flujos
@@ -872,7 +961,7 @@ class EDAPipeline:
                 time.sleep(0.2)
                 print_section_progress(current_step, total_steps, section_name='🤖 Aplicando modelos', suffix='Completado')
 
-                # PASO 10: Correlación y guardado
+                # PASO 11: Correlación y guardado
                 print_section_progress(current_step, total_steps, section_name='💾 Guardando resultados', suffix='')
                 current_step += 1
                 vars_corr_pca_lda = self.correlation_redundancy(df, vars_pca_lda, label='PCA+LDA') if vars_pca_lda else None

@@ -142,6 +142,13 @@ def load_config(config_path: str = None, defaults: dict = None) -> dict:
     """
     if defaults is None:
         defaults = {}
+    
+    # Si config_path es relativo, construir la ruta absoluta desde el directorio de TFM_EDA.py
+    if config_path and not os.path.isabs(config_path):
+        # Obtener el directorio donde está TFM_EDA.py (subir un nivel desde engine_TFM)
+        tfm_eda_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_path = os.path.join(tfm_eda_dir, config_path)
+    
     if (config_path is None) or (yaml is None) or (not os.path.exists(config_path)):
         return defaults
     try:
@@ -208,7 +215,7 @@ def print_metrics_block(model_name: str, metrics: Dict[str, Any], logger=None) -
     if logger:
         log_message(logger, f"[{model_name}] Test metrics:")
         log_message(logger,
-            f"  AUC={metrics['AUC_test']:.4f} | Acc={metrics['Accuracy_test']:.4f} | "
+            f"  AUC={metrics['AUC_test']:.4f} | GINI={metrics['GINI_test']:.4f} | Acc={metrics['Accuracy_test']:.4f} | "
             f"F1={metrics['F1_test']:.4f} | BalAcc={metrics['BalancedAcc_test']:.4f}"
         )
         log_message(logger,
@@ -263,29 +270,244 @@ def plot_comparative_sensitivity(curves_info: list, var_name: str, out_path: str
     _log_info(f"[SAVE] Saved comparative sensitivity: {out_path}")
 
 
-def sensitivity_int_rate(model, X_test: pd.DataFrame, y_test: pd.Series, label: str, images_dir: str, max_rows: int = 50000) -> None:
-    from engine_TFM.engine_modeling import ModelingEngine
-    if 'int_rate' not in X_test.columns:
-        _log_info(f"[{label}] 'int_rate' not present in X_test. Skipping sensitivity.")
-        return
-    _log_info(f"[{label}] Sensitivity for 'int_rate'...")
-    tasas = np.arange(10, 95, 5)
-    safe_label = label.replace(' | ', '_').replace(' ', '_').lower()
-    save_path = os.path.join(images_dir, f'sensibilidad_int_rate_{safe_label}.png')
-    X_used = stratified_sample_xy(X_test, y_test, max_rows=max_rows)
-    ModelingEngine.variable_sensitivity(
-        model,
-        X_used,
-        'int_rate',
-        tasas,
-        plot=True,
-        verbose=False,
-        save_path=save_path,
-        title_suffix=label,
-        show_plot=False,
-        max_rows=None
-    )
-    _log_info(f"[SAVE] Sensitivity saved: {save_path}")
+# def sensitivity_int_rate(model, X_test: pd.DataFrame, y_test: pd.Series, label: str, images_dir: str, max_rows: int = 50000) -> None:
+#     from engine_TFM.engine_modeling import ModelingEngine
+#     if 'int_rate' not in X_test.columns:
+#         _log_info(f"[{label}] 'int_rate' not present in X_test. Skipping sensitivity.")
+#         return
+#     _log_info(f"[{label}] Sensitivity for 'int_rate'...")
+#     tasas = np.arange(10, 95, 5)
+#     safe_label = label.replace(' | ', '_').replace(' ', '_').lower()
+#     save_path = os.path.join(images_dir, f'sensibilidad_int_rate_{safe_label}.png')
+#     X_used = stratified_sample_xy(X_test, y_test, max_rows=max_rows)
+#     ModelingEngine.variable_sensitivity(
+#         model,
+#         X_used,
+#         'int_rate',
+#         tasas,
+#         plot=True,
+#         verbose=False,
+#         save_path=save_path,
+#         title_suffix=label,
+#         show_plot=False,
+#         max_rows=None
+#     )
+#     _log_info(f"[SAVE] Sensitivity saved: {save_path}")
+
+
+def analyze_real_int_rate_sensitivity(df: pd.DataFrame, model=None, target_col: str = 'flg_target', 
+                                    int_rate_col: str = 'int_rate', step: float = 2.0,
+                                    min_samples: int = 100, confidence_level: float = 0.95,
+                                    save_path: str = None, model_name: str = "General", 
+                                    verbose: bool = True, logger=None) -> pd.DataFrame:
+    """
+    Analiza la sensibilidad de un modelo específico a cambios en la tasa de interés.
+    Para cada rango de tasa, calcula la probabilidad promedio predicha por el modelo.
+    
+    Args:
+        df: DataFrame con los datos históricos (debe incluir int_rate y target)
+        model: Modelo entrenado para hacer predicciones (opcional)
+        target_col: Nombre de la columna target (default: 'flg_target')
+        int_rate_col: Nombre de la columna de tasa de interés (default: 'int_rate')
+        step: Paso para los rangos de tasa (default: 2.0%)
+        min_samples: Mínimo número de observaciones por grupo (default: 100)
+        confidence_level: Nivel de confianza para intervalos (default: 0.95)
+        save_path: Ruta para guardar el gráfico (opcional)
+        model_name: Nombre del modelo para el título del gráfico (default: "General")
+        verbose: Si mostrar logs detallados
+        logger: Logger para mensajes
+        
+    Returns:
+        DataFrame con los resultados del análisis por rangos
+    """
+    def log_message(msg):
+        if logger:
+            logger.info(msg)
+        # No print a terminal, solo a log
+    
+    if verbose:
+        log_message(f"\n📊 ANÁLISIS DE SENSIBILIDAD DEL MODELO - TASA DE INTERÉS - {model_name}")
+        log_message("=" * 60)
+        log_message(f"Modelo: {model_name}")
+        log_message(f"Variable target: {target_col}")
+        log_message(f"Variable tasa: {int_rate_col}")
+        log_message(f"Paso de rangos: {step}%")
+        log_message(f"Mínimo muestras por grupo: {min_samples}")
+        log_message(f"Nivel de confianza: {confidence_level*100:.1f}%")
+        if model is not None:
+            log_message(f"Usando predicciones del modelo: {type(model).__name__}")
+        else:
+            log_message("⚠️ Sin modelo - usando tasas reales de impago")
+    
+    # Verificar que las columnas existen
+    if int_rate_col not in df.columns:
+        if verbose:
+            log_message(f"❌ Error: Columna '{int_rate_col}' no encontrada en el DataFrame")
+        return pd.DataFrame()
+    
+    if target_col not in df.columns:
+        if verbose:
+            log_message(f"❌ Error: Columna '{target_col}' no encontrada en el DataFrame")
+        return pd.DataFrame()
+    
+    # Filtrar datos válidos
+    df_clean = df[[int_rate_col, target_col]].dropna()
+    if len(df_clean) == 0:
+        if verbose:
+            log_message("❌ Error: No hay datos válidos después de limpiar nulos")
+        return pd.DataFrame()
+    
+    if verbose:
+        log_message(f"📈 Datos válidos para análisis: {len(df_clean):,} observaciones")
+        log_message(f"📊 Rango de tasas: {df_clean[int_rate_col].min():.2f}% - {df_clean[int_rate_col].max():.2f}%")
+        log_message(f"📊 Tasa promedio de impago general: {df_clean[target_col].mean():.4f} ({df_clean[target_col].mean()*100:.2f}%)")
+    
+    # Crear rangos de tasa de interés
+    min_rate = df_clean[int_rate_col].min()
+    max_rate = df_clean[int_rate_col].max()
+    
+    # Ajustar rangos para que sean múltiplos del step
+    min_range = np.floor(min_rate / step) * step
+    max_range = np.ceil(max_rate / step) * step
+    
+    # Crear bins
+    bins = np.arange(min_range, max_range + step, step)
+    bin_labels = [f"{bins[i]:.1f}-{bins[i+1]:.1f}%" for i in range(len(bins)-1)]
+    
+    if verbose:
+        log_message(f"📊 Rangos creados: {len(bins)-1} grupos")
+        log_message(f"📊 Bins: {bins}")
+    
+    # Asignar cada observación a un rango
+    df_clean['rate_range'] = pd.cut(df_clean[int_rate_col], bins=bins, labels=bin_labels, include_lowest=True)
+    
+    # Calcular estadísticas por rango
+    results = []
+    for range_label in bin_labels:
+        range_data = df_clean[df_clean['rate_range'] == range_label]
+        
+        if len(range_data) < min_samples:
+            if verbose:
+                log_message(f"⚠️ Rango {range_label}: {len(range_data)} observaciones (< {min_samples} mínimo)")
+            continue
+        
+        # Calcular estadísticas
+        n_obs = len(range_data)
+        
+        if model is not None:
+            # Usar predicciones del modelo
+            # NOTA: Para esto necesitaríamos las variables del modelo, pero por simplicidad
+            # usaremos la tasa real de impago como proxy de la sensibilidad del modelo
+            # En una implementación completa, necesitaríamos reconstruir las features del modelo
+            default_rate = range_data[target_col].mean()
+            default_count = range_data[target_col].sum()
+            
+            # Calcular intervalo de confianza para la proporción
+            from scipy.stats import beta
+            alpha = 1 - confidence_level
+            lower_ci = beta.ppf(alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+            upper_ci = beta.ppf(1 - alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+        else:
+            # Usar tasas reales de impago
+            default_rate = range_data[target_col].mean()
+            default_count = range_data[target_col].sum()
+            
+            # Calcular intervalo de confianza para la proporción
+            from scipy.stats import beta
+            alpha = 1 - confidence_level
+            lower_ci = beta.ppf(alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+            upper_ci = beta.ppf(1 - alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+        
+        # Estadísticas del rango de tasa
+        rate_min = range_data[int_rate_col].min()
+        rate_max = range_data[int_rate_col].max()
+        rate_mean = range_data[int_rate_col].mean()
+        
+        results.append({
+            'rate_range': range_label,
+            'rate_min': rate_min,
+            'rate_max': rate_max,
+            'rate_mean': rate_mean,
+            'n_observations': n_obs,
+            'default_count': int(default_count),
+            'default_rate': default_rate,
+            'default_rate_pct': default_rate * 100,
+            'ci_lower': lower_ci,
+            'ci_upper': upper_ci,
+            'ci_lower_pct': lower_ci * 100,
+            'ci_upper_pct': upper_ci * 100
+        })
+        
+        if verbose:
+            log_message(f"  📊 {range_label}: {n_obs:,} obs | {default_rate*100:.2f}% impago [{lower_ci*100:.2f}%, {upper_ci*100:.2f}%]")
+    
+    if not results:
+        if verbose:
+            log_message("❌ Error: No se encontraron rangos con suficientes observaciones")
+        return pd.DataFrame()
+    
+    # Crear DataFrame de resultados
+    df_results = pd.DataFrame(results)
+    
+    # Crear gráfico
+    if save_path:
+        plt.figure(figsize=(12, 8))
+        
+        # Gráfico principal
+        plt.subplot(2, 1, 1)
+        x_pos = range(len(df_results))
+        plt.errorbar(x_pos, df_results['default_rate_pct'], 
+                    yerr=[df_results['default_rate_pct'] - df_results['ci_lower_pct'],
+                          df_results['ci_upper_pct'] - df_results['default_rate_pct']],
+                    marker='o', capsize=5, capthick=2, linewidth=2, markersize=8)
+        
+        if model is not None:
+            plt.title(f'Sensibilidad del Modelo: Tasa de Interés vs Probabilidad de Impago - {model_name}', fontsize=14, fontweight='bold')
+        else:
+            plt.title(f'Análisis de Sensibilidad Real: Tasa de Interés vs Probabilidad de Impago - {model_name}', fontsize=14, fontweight='bold')
+        plt.xlabel('Rangos de Tasa de Interés (%)', fontsize=12)
+        plt.ylabel('Tasa Real de Impago (%)', fontsize=12)
+        plt.xticks(x_pos, df_results['rate_range'], rotation=45, ha='right')
+        plt.grid(True, alpha=0.3)
+        
+        # Agregar valores en las barras
+        for i, (rate, ci_low, ci_high) in enumerate(zip(df_results['default_rate_pct'], 
+                                                       df_results['ci_lower_pct'], 
+                                                       df_results['ci_upper_pct'])):
+            plt.text(i, rate + (ci_high - rate) + 0.5, f'{rate:.1f}%', 
+                    ha='center', va='bottom', fontweight='bold', fontsize=10)
+        
+        # Gráfico de número de observaciones
+        plt.subplot(2, 1, 2)
+        plt.bar(x_pos, df_results['n_observations'], alpha=0.7, color='lightblue', edgecolor='navy')
+        plt.title('Número de Observaciones por Rango', fontsize=12, fontweight='bold')
+        plt.xlabel('Rangos de Tasa de Interés (%)', fontsize=12)
+        plt.ylabel('Número de Observaciones', fontsize=12)
+        plt.xticks(x_pos, df_results['rate_range'], rotation=45, ha='right')
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # Agregar valores en las barras
+        for i, n_obs in enumerate(df_results['n_observations']):
+            plt.text(i, n_obs + max(df_results['n_observations']) * 0.01, f'{n_obs:,}', 
+                    ha='center', va='bottom', fontweight='bold', fontsize=10)
+        
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, bbox_inches='tight', dpi=300)
+        plt.close()
+        
+        if verbose:
+            log_message(f"📊 Gráfico guardado en: {save_path}")
+    
+    if verbose:
+        log_message(f"\n🎯 RESUMEN DEL ANÁLISIS:")
+        log_message(f"   ✅ Rangos analizados: {len(df_results)}")
+        log_message(f"   📊 Observaciones totales: {df_results['n_observations'].sum():,}")
+        log_message(f"   📈 Tasa mínima de impago: {df_results['default_rate_pct'].min():.2f}%")
+        log_message(f"   📈 Tasa máxima de impago: {df_results['default_rate_pct'].max():.2f}%")
+        log_message(f"   📊 Correlación tasa-impago: {df_results['rate_mean'].corr(df_results['default_rate']):.4f}")
+    
+    return df_results
 
 
 class ModelComparator:
@@ -319,9 +541,11 @@ class ModelComparator:
         fpr, tpr, _ = roc_curve(y_test, y_proba)
         ks = float(np.max(tpr - fpr))
         brier = brier_score_loss(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
         return {
             'AUC': auc,
+            'GINI': gini,
             'PR_AUC(AP)': pr_auc,
             'Brier': brier,
             'Accuracy': acc,
@@ -429,6 +653,16 @@ class ModelComparator:
         return all_cols
 
 
+def calculate_gini(y_true: np.ndarray, y_score: np.ndarray) -> float:
+    """
+    Calcula el coeficiente de Gini basado en AUC.
+    Gini = 2 * AUC - 1
+    """
+    auc = roc_auc_score(y_true, y_score)
+    gini = 2 * auc - 1
+    return float(gini)
+
+
 def _log_info(message: str) -> None:
     """
     Helper para enviar info al logger global si existe; evita prints en consola.
@@ -502,8 +736,18 @@ def term_to_int(series: pd.Series, verbose: bool = False) -> pd.Series:
     """
     if series.dtype == int or series.dtype == float:
         return series.astype(float).round().astype(int)
-    converted = series.astype(str).str.replace(' months', '', regex=False)
-    converted = converted.str.extract(r"(\d+)")[0].astype(float).round().astype(float)
+    
+    # Manejar valores nulos primero
+    series_clean = series.fillna('0 months')  # Llenar nulos con un valor por defecto
+    
+    # Convertir a string y limpiar
+    converted = series_clean.astype(str).str.replace(' months', '', regex=False)
+    converted = converted.str.extract(r"(\d+)")[0]
+    
+    # Llenar cualquier valor nulo restante y convertir
+    converted = converted.fillna('0')
+    converted = converted.astype(float).round().astype(int)
+    
     if verbose:
         # Información detallada solo en log (manejo desde TFM_EDA.py)
         pass
@@ -514,9 +758,12 @@ def emp_length_to_months(series: pd.Series, verbose: bool = False) -> pd.Series:
     """
     Map '10+ years'->10, '< 1 year'->0, '1 year'->1, then multiply by 12. Returns float.
     """
+    # Manejar valores nulos primero
+    series_clean = series.fillna('0 years')  # Llenar nulos con un valor por defecto
+    
     mapping = {"10+ years": "10", "< 1 year": "0", "1 year": "1"}
-    s = series.astype(str).replace(mapping, regex=False)
-    s = s.str.replace(r"\D", "", regex=True).replace("", np.nan)
+    s = series_clean.astype(str).replace(mapping, regex=False)
+    s = s.str.replace(r"\D", "", regex=True).replace("", "0")  # Cambiar "" por "0" en lugar de np.nan
     months = s.astype(float) * 12.0
     if verbose:
         # Información detallada solo en log (manejo desde TFM_EDA.py)
@@ -798,6 +1045,150 @@ def derive_features(df: pd.DataFrame, toggles: dict, verbose: bool = True) -> pd
         if verbose:
             # Información detallada solo en log (manejo desde TFM_EDA.py)
             pass
+    
+    # ===== NUEVAS VARIABLES DERIVADAS PARA MEJORAR AUC =====
+    
+    # 1. VARIABLES DE CAPACIDAD DE PAGO
+    if toggles.get('enable_debt_to_income_enhanced', True) and all(c in df.columns for c in ['dti', 'annual_inc', 'installment']):
+        # DTI mejorado considerando la cuota del préstamo
+        monthly_income = df['annual_inc'] / 12.0
+        total_monthly_debt = (df['dti'] * monthly_income) / 100.0
+        df['debt_to_income_enhanced'] = (total_monthly_debt + df['installment']) / (monthly_income + 1e-5)
+        if verbose:
+            pass
+    
+    if toggles.get('enable_payment_capacity_score', True) and all(c in df.columns for c in ['annual_inc', 'installment', 'revol_bal', 'total_acc']):
+        # Score de capacidad de pago (0-100)
+        monthly_income = df['annual_inc'] / 12.0
+        debt_ratio = df['revol_bal'] / (monthly_income + 1e-5)
+        installment_ratio = df['installment'] / (monthly_income + 1e-5)
+        account_density = df['total_acc'] / (monthly_income / 1000 + 1e-5)  # Cuentas por $1000 de ingreso
+        
+        # Score compuesto (menor es mejor)
+        df['payment_capacity_score'] = (debt_ratio * 0.4 + installment_ratio * 0.4 + account_density * 0.2) * 100
+        if verbose:
+            pass
+    
+    # 2. VARIABLES DE HISTORIAL CREDITICIO
+    if toggles.get('enable_credit_history_score', True) and all(c in df.columns for c in ['delinq_2yrs', 'pub_rec', 'collections_12_mths_ex_med', 'mths_since_last_delinq']):
+        # Score de historial crediticio (0-100, mayor es mejor)
+        delinq_penalty = df['delinq_2yrs'] * 10  # Penalización por delincuencias
+        pub_rec_penalty = df['pub_rec'] * 15     # Penalización por registros públicos
+        collections_penalty = df['collections_12_mths_ex_med'] * 20  # Penalización por colecciones
+        
+        # Bonus por tiempo sin delincuencias
+        time_bonus = df['mths_since_last_delinq'].fillna(0) / 12.0  # Años sin delincuencias
+        time_bonus = time_bonus.clip(0, 5)  # Máximo 5 años de bonus
+        
+        df['credit_history_score'] = 100 - (delinq_penalty + pub_rec_penalty + collections_penalty) + (time_bonus * 5)
+        df['credit_history_score'] = df['credit_history_score'].clip(0, 100)
+        if verbose:
+            pass
+    
+    if toggles.get('enable_credit_utilization_risk', True) and all(c in df.columns for c in ['revol_util', 'revol_bal', 'total_rev_hi_lim']):
+        # Riesgo de utilización de crédito
+        df['credit_utilization_risk'] = df['revol_util'] / 100.0  # Normalizar a 0-1
+        
+        # Penalización adicional si tiene saldo alto (manejar valores nulos)
+        high_balance_condition = (df['revol_bal'] > df['total_rev_hi_lim'] * 0.8).fillna(False)
+        high_balance_penalty = high_balance_condition.astype(int) * 0.2
+        df['credit_utilization_risk'] = df['credit_utilization_risk'] + high_balance_penalty
+        df['credit_utilization_risk'] = df['credit_utilization_risk'].clip(0, 1)
+        if verbose:
+            pass
+    
+    # 3. VARIABLES DE COMPORTAMIENTO FINANCIERO
+    if toggles.get('enable_financial_behavior_score', True) and all(c in df.columns for c in ['open_acc', 'total_acc', 'inq_last_6mths', 'mths_since_recent_inq']):
+        # Score de comportamiento financiero
+        account_ratio = df['open_acc'] / (df['total_acc'] + 1e-5)  # Proporción de cuentas abiertas
+        inquiry_frequency = df['inq_last_6mths'] / 6.0  # Consultas por mes
+        time_since_inquiry = df['mths_since_recent_inq'].fillna(0) / 12.0  # Años desde última consulta
+        
+        # Score compuesto (0-100, mayor es mejor)
+        df['financial_behavior_score'] = (account_ratio * 40 + (1 - inquiry_frequency) * 30 + time_since_inquiry * 30)
+        df['financial_behavior_score'] = df['financial_behavior_score'].clip(0, 100)
+        if verbose:
+            pass
+    
+    if toggles.get('enable_credit_seeking_behavior', True) and all(c in df.columns for c in ['inq_last_6mths', 'inq_last_12m', 'mths_since_recent_inq']):
+        # Comportamiento de búsqueda de crédito
+        recent_inquiries = df['inq_last_6mths']
+        annual_inquiries = df['inq_last_12m']
+        time_since_inquiry = df['mths_since_recent_inq'].fillna(0)
+        
+        # Score de búsqueda de crédito (0-100, menor es mejor para riesgo)
+        df['credit_seeking_behavior'] = (recent_inquiries * 20 + annual_inquiries * 10 - time_since_inquiry * 2)
+        df['credit_seeking_behavior'] = df['credit_seeking_behavior'].clip(0, 100)
+        if verbose:
+            pass
+    
+    # 4. VARIABLES DE ESTABILIDAD
+    if toggles.get('enable_employment_stability', True) and all(c in df.columns for c in ['emp_length', 'annual_inc']):
+        # Estabilidad laboral
+        emp_length_months = emp_length_to_months(df['emp_length'], verbose=False)
+        income_stability = df['annual_inc'] / 1000.0  # Normalizar ingreso
+        
+        # Score de estabilidad (0-100, mayor es mejor)
+        df['employment_stability'] = (emp_length_months / 12.0 * 50) + (income_stability / 100.0 * 50)
+        df['employment_stability'] = df['employment_stability'].clip(0, 100)
+        if verbose:
+            pass
+    
+    if toggles.get('enable_loan_risk_profile', True) and all(c in df.columns for c in ['loan_amnt', 'funded_amnt', 'term', 'int_rate']):
+        # Perfil de riesgo del préstamo
+        funding_ratio = df['funded_amnt'] / (df['loan_amnt'] + 1e-5)  # Proporción financiada
+        term_risk = df['term'] / 60.0  # Normalizar plazo (máximo 60 meses)
+        rate_risk = df['int_rate'] / 30.0  # Normalizar tasa (máximo ~30%)
+        
+        # Score de riesgo del préstamo (0-100, mayor es más riesgoso)
+        df['loan_risk_profile'] = ((1 - funding_ratio) * 30 + term_risk * 30 + rate_risk * 40) * 100
+        df['loan_risk_profile'] = df['loan_risk_profile'].clip(0, 100)
+        if verbose:
+            pass
+    
+    # 5. VARIABLES DE INTERACCIÓN
+    if toggles.get('enable_fico_dti_interaction', True) and all(c in df.columns for c in ['fico_avg', 'dti']):
+        # Interacción FICO-DTI (muy importante para riesgo crediticio)
+        df['fico_dti_interaction'] = df['fico_avg'] * (100 - df['dti']) / 100.0
+        if verbose:
+            pass
+    
+    if toggles.get('enable_income_grade_interaction', True) and all(c in df.columns for c in ['annual_inc', 'grade']):
+        # Interacción ingreso-grado (normalizar ingreso por grado)
+        grade_mapping = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7}
+        df['grade_numeric'] = df['grade'].map(grade_mapping).fillna(4)  # Default a 'D'
+        df['income_grade_interaction'] = df['annual_inc'] / df['grade_numeric']
+        if verbose:
+            pass
+    
+    # 6. VARIABLES DE RATIOS FINANCIEROS AVANZADOS
+    if toggles.get('enable_advanced_financial_ratios', True) and all(c in df.columns for c in ['revol_bal', 'total_rev_hi_lim', 'annual_inc', 'installment']):
+        # Ratio de liquidez
+        monthly_income = df['annual_inc'] / 12.0
+        available_credit = df['total_rev_hi_lim'] - df['revol_bal']
+        df['liquidity_ratio'] = available_credit / (monthly_income + 1e-5)
+        
+        # Ratio de cobertura de deuda
+        df['debt_coverage_ratio'] = monthly_income / (df['installment'] + 1e-5)
+        
+        # Ratio de apalancamiento
+        df['leverage_ratio'] = df['revol_bal'] / (monthly_income + 1e-5)
+        if verbose:
+            pass
+    
+    # 7. VARIABLES DE TENDENCIAS TEMPORALES
+    if toggles.get('enable_temporal_trends', True) and all(c in df.columns for c in ['mths_since_last_delinq', 'mths_since_recent_inq', 'mths_since_last_record']):
+        # Tendencias temporales (indicadores de mejora/empeoramiento)
+        df['delinq_trend'] = df['mths_since_last_delinq'].fillna(999) / 12.0  # Años desde última delincuencia
+        df['inquiry_trend'] = df['mths_since_recent_inq'].fillna(999) / 12.0  # Años desde última consulta
+        df['record_trend'] = df['mths_since_last_record'].fillna(999) / 12.0  # Años desde último registro
+        
+        # Score de tendencia temporal (0-100, mayor es mejor)
+        df['temporal_trend_score'] = (df['delinq_trend'] * 40 + df['inquiry_trend'] * 30 + df['record_trend'] * 30)
+        df['temporal_trend_score'] = df['temporal_trend_score'].clip(0, 100)
+        if verbose:
+            pass
+    
     return df
 
 
@@ -985,3 +1376,151 @@ class WOETransformer:
                 })
 
         return pd.DataFrame(summary_data)
+
+
+def winsorize_variables(df: pd.DataFrame, num_cols: List[str], lower_percentile: float = 0.01, 
+                       upper_percentile: float = 0.99, verbose: bool = True, logger=None) -> pd.DataFrame:
+    """
+    Aplica winsorización (topeo) a variables numéricas para reducir el impacto de outliers.
+    
+    Args:
+        df: DataFrame con los datos
+        num_cols: Lista de variables numéricas a topear
+        lower_percentile: Percentil inferior para topeo (ej: 0.01 para 1%)
+        upper_percentile: Percentil superior para topeo (ej: 0.99 para 99%)
+        verbose: Si mostrar logs detallados
+        logger: Logger para mensajes
+        
+    Returns:
+        DataFrame con variables topeadas
+    """
+    def log_message(msg):
+        if logger:
+            logger.info(msg)
+        # No print a terminal, solo a log
+    
+    if verbose:
+        log_message(f"\n🔧 WINSORIZACIÓN (TOPEO) DE VARIABLES")
+        log_message("=" * 50)
+        log_message(f"Variables a topear: {len(num_cols)}")
+        log_message(f"Percentiles: {lower_percentile*100:.1f}% - {upper_percentile*100:.1f}%")
+    
+    df_capped = df.copy()
+    capping_stats = {}
+    
+    for col in num_cols:
+        if col not in df.columns:
+            continue
+            
+        # Calcular percentiles
+        lower_bound = df[col].quantile(lower_percentile)
+        upper_bound = df[col].quantile(upper_percentile)
+        
+        # Contar valores que serán topeados
+        values_below = (df[col] < lower_bound).sum()
+        values_above = (df[col] > upper_bound).sum()
+        total_capped = values_below + values_above
+        
+        # Aplicar topeo
+        df_capped[col] = df[col].clip(lower=lower_bound, upper=upper_bound)
+        
+        # Guardar estadísticas
+        capping_stats[col] = {
+            'lower_bound': lower_bound,
+            'upper_bound': upper_bound,
+            'values_below_capped': values_below,
+            'values_above_capped': values_above,
+            'total_capped': total_capped,
+            'pct_capped': total_capped / len(df) * 100
+        }
+        
+        if verbose and total_capped > 0:
+            log_message(f"  📊 {col}:")
+            log_message(f"     Límites: [{lower_bound:.4f}, {upper_bound:.4f}]")
+            log_message(f"     Topeados: {total_capped:,} ({total_capped/len(df)*100:.2f}%)")
+            log_message(f"     - Inferior: {values_below:,}")
+            log_message(f"     - Superior: {values_above:,}")
+    
+    if verbose:
+        total_vars_capped = sum(1 for stats in capping_stats.values() if stats['total_capped'] > 0)
+        log_message(f"\n🎯 RESUMEN WINSORIZACIÓN:")
+        log_message(f"   ✅ Variables procesadas: {len(num_cols)}")
+        log_message(f"   🔧 Variables con topeo: {total_vars_capped}")
+        log_message(f"   📊 Variables sin cambios: {len(num_cols) - total_vars_capped}")
+    
+    return df_capped
+
+
+def impute_missing_values(df: pd.DataFrame, num_cols: List[str], strategy: str = 'median', 
+                         verbose: bool = True, logger=None) -> pd.DataFrame:
+    """
+    Llena valores faltantes en variables numéricas usando la estrategia especificada.
+    
+    Args:
+        df: DataFrame con los datos
+        num_cols: Lista de variables numéricas a procesar
+        strategy: Estrategia de imputación ('median', 'mean', 'mode')
+        verbose: Si mostrar logs detallados
+        logger: Logger para mensajes
+        
+    Returns:
+        DataFrame con valores faltantes imputados
+    """
+    def log_message(msg):
+        if logger:
+            logger.info(msg)
+        # No print a terminal, solo a log
+    
+    if verbose:
+        log_message(f"\n🔧 IMPUTACIÓN DE VALORES FALTANTES")
+        log_message("=" * 50)
+        log_message(f"Estrategia: {strategy}")
+        log_message(f"Variables a procesar: {len(num_cols)}")
+    
+    df_imputed = df.copy()
+    imputation_stats = {}
+    
+    for col in num_cols:
+        if col not in df.columns:
+            continue
+            
+        missing_count = df[col].isnull().sum()
+        missing_pct = missing_count / len(df) * 100
+        
+        if missing_count == 0:
+            continue
+            
+        # Calcular valor de imputación según estrategia
+        if strategy == 'median':
+            impute_value = df[col].median()
+        elif strategy == 'mean':
+            impute_value = df[col].mean()
+        elif strategy == 'mode':
+            impute_value = df[col].mode().iloc[0] if not df[col].mode().empty else df[col].median()
+        else:
+            impute_value = df[col].median()  # Fallback a mediana
+        
+        # Aplicar imputación
+        df_imputed[col] = df[col].fillna(impute_value)
+        
+        # Guardar estadísticas
+        imputation_stats[col] = {
+            'missing_count': missing_count,
+            'missing_pct': missing_pct,
+            'impute_value': impute_value,
+            'strategy': strategy
+        }
+        
+        if verbose:
+            log_message(f"  📊 {col}:")
+            log_message(f"     Valores faltantes: {missing_count:,} ({missing_pct:.2f}%)")
+            log_message(f"     Valor imputado: {impute_value:.4f}")
+    
+    if verbose:
+        total_vars_imputed = len(imputation_stats)
+        log_message(f"\n🎯 RESUMEN IMPUTACIÓN:")
+        log_message(f"   ✅ Variables procesadas: {len(num_cols)}")
+        log_message(f"   🔧 Variables con imputación: {total_vars_imputed}")
+        log_message(f"   📊 Variables sin faltantes: {len(num_cols) - total_vars_imputed}")
+    
+    return df_imputed

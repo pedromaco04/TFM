@@ -17,6 +17,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, confusion_matrix, Con
 from sklearn.impute import SimpleImputer
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import f1_score, balanced_accuracy_score, precision_recall_curve, brier_score_loss, average_precision_score
+from engine_TFM.utils import calculate_gini
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 import numpy as np
@@ -104,6 +105,7 @@ class ModelingEngine:
         
         # Métricas extendidas
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -141,11 +143,12 @@ class ModelingEngine:
         
         if verbose:
             print("[fit_logit_predict] Métricas en test:")
-            print(f"  AUC={auc:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
+            print(f"  AUC={auc:.4f} | GINI={gini:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
             print(f"  PR_AUC(AP)={pr_auc:.4f} | KS={ks:.4f} | Brier={brier:.4f}")
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -268,6 +271,7 @@ class ModelingEngine:
 
         # Métricas extendidas
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -305,11 +309,12 @@ class ModelingEngine:
 
         if verbose:
             print("[fit_gaussian_nb_predict] Métricas en test:")
-            print(f"  AUC={auc:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
+            print(f"  AUC={auc:.4f} | GINI={gini:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
             print(f"  PR_AUC(AP)={pr_auc:.4f} | KS={ks:.4f} | Brier={brier:.4f}")
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -405,6 +410,7 @@ class ModelingEngine:
         y_pred = best_preds
         y_proba = best_proba
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -417,6 +423,7 @@ class ModelingEngine:
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -558,6 +565,7 @@ class ModelingEngine:
 
         # Métricas extendidas
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -593,11 +601,12 @@ class ModelingEngine:
 
         if verbose:
             print("[fit_linear_svm_predict] Métricas en test:")
-            print(f"  AUC={auc:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
+            print(f"  AUC={auc:.4f} | GINI={gini:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
             print(f"  PR_AUC(AP)={pr_auc:.4f} | KS={ks:.4f} | Brier={brier:.4f}")
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -721,6 +730,7 @@ class ModelingEngine:
         y_pred = best_pred
         y_proba = best_proba
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -755,6 +765,7 @@ class ModelingEngine:
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -832,6 +843,7 @@ class ModelingEngine:
 
         # Métricas
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -865,11 +877,12 @@ class ModelingEngine:
 
         if verbose:
             print("[fit_mlp_predict] Métricas en test:")
-            print(f"  AUC={auc:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
+            print(f"  AUC={auc:.4f} | GINI={gini:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
             print(f"  PR_AUC(AP)={pr_auc:.4f} | KS={ks:.4f} | Brier={brier:.4f}")
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -982,6 +995,7 @@ class ModelingEngine:
         y_pred = best_y_pred
         y_proba = best_y_proba
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -1014,6 +1028,7 @@ class ModelingEngine:
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -1079,6 +1094,7 @@ class ModelingEngine:
         y_proba = model.predict_proba(X_test)[:, 1]
 
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -1111,11 +1127,12 @@ class ModelingEngine:
 
         if verbose:
             print("[fit_rbf_svm_predict] Métricas en test:")
-            print(f"  AUC={auc:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
+            print(f"  AUC={auc:.4f} | GINI={gini:.4f} | Acc={acc:.4f} | F1={f1:.4f} | BalAcc={bal_acc:.4f}")
             print(f"  PR_AUC(AP)={pr_auc:.4f} | KS={ks:.4f} | Brier={brier:.4f}")
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
@@ -1230,6 +1247,7 @@ class ModelingEngine:
         y_pred = best_pred
         y_proba = best_proba
         auc = roc_auc_score(y_test, y_proba)
+        gini = calculate_gini(y_test, y_proba)
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         bal_acc = balanced_accuracy_score(y_test, y_pred)
@@ -1261,6 +1279,7 @@ class ModelingEngine:
 
         metrics = {
             'AUC_test': auc,
+            'GINI_test': gini,
             'Accuracy_test': acc,
             'F1_test': f1,
             'BalancedAcc_test': bal_acc,
