@@ -139,6 +139,7 @@ class EDAPipeline:
                     'enable_installment_pct_loan': True,
                     'enable_fico_avg': True,
                     'enable_revol_util_ratio': True,
+                    'enable_installment_income_ratio': True,
                 }
             },
             'selection': {

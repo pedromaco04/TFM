@@ -1,702 +1,705 @@
-2025-09-04 16:58:21 | INFO | ================================================================================
-2025-09-04 16:58:21 | INFO | EDA PIPELINE STARTED
-2025-09-04 16:58:21 | INFO | ================================================================================
-2025-09-04 16:58:21 | INFO | Configuration file: Unknown
-2025-09-04 16:58:21 | INFO | Timestamp: 2025-09-04 16:58:21
-2025-09-04 16:58:21 | INFO | Log file: log_EDA.txt
-2025-09-04 16:58:21 | INFO | ================================================================================
-2025-09-04 16:58:21 | INFO | 🚀 INICIANDO EDA PIPELINE...
-2025-09-04 16:58:21 | INFO | Starting EDA Pipeline execution...
-2025-09-04 16:58:21 | INFO | 
-2025-09-04 16:58:21 | INFO | STEP 1: Load data
-2025-09-04 16:58:21 | INFO | ------------------------------------------------------------
-2025-09-04 16:58:21 | INFO | Loading data from: Loan_data.csv
-2025-09-04 16:58:57 | INFO | Data loaded successfully
-2025-09-04 16:58:57 | INFO | Dataset shape: 1007987 rows × 152 columns
-2025-09-04 16:59:06 | INFO | Memory usage: 3070.43 MB
-2025-09-04 16:59:06 | INFO | Columns: ['Unnamed: 0.1', 'Unnamed: 0', 'member_id', 'loan_amnt', 'funded_amnt', 'funded_amnt_inv', 'term', 'int_rate', 'installment', 'grade', 'sub_grade', 'emp_title', 'emp_length', 'home_ownership', 'annual_inc', 'verification_status', 'issue_d', 'loan_status', 'pymnt_plan', 'url', 'desc', 'purpose', 'title', 'zip_code', 'addr_state', 'dti', 'delinq_2yrs', 'earliest_cr_line', 'fico_range_low', 'fico_range_high', 'inq_last_6mths', 'mths_since_last_delinq', 'mths_since_last_record', 'open_acc', 'pub_rec', 'revol_bal', 'revol_util', 'total_acc', 'initial_list_status', 'out_prncp', 'out_prncp_inv', 'total_pymnt', 'total_pymnt_inv', 'total_rec_prncp', 'total_rec_int', 'total_rec_late_fee', 'recoveries', 'collection_recovery_fee', 'last_pymnt_d', 'last_pymnt_amnt', 'next_pymnt_d', 'last_credit_pull_d', 'last_fico_range_high', 'last_fico_range_low', 'collections_12_mths_ex_med', 'mths_since_last_major_derog', 'policy_code', 'application_type', 'annual_inc_joint', 'dti_joint', 'verification_status_joint', 'acc_now_delinq', 'tot_coll_amt', 'tot_cur_bal', 'open_acc_6m', 'open_act_il', 'open_il_12m', 'open_il_24m', 'mths_since_rcnt_il', 'total_bal_il', 'il_util', 'open_rv_12m', 'open_rv_24m', 'max_bal_bc', 'all_util', 'total_rev_hi_lim', 'inq_fi', 'total_cu_tl', 'inq_last_12m', 'acc_open_past_24mths', 'avg_cur_bal', 'bc_open_to_buy', 'bc_util', 'chargeoff_within_12_mths', 'delinq_amnt', 'mo_sin_old_il_acct', 'mo_sin_old_rev_tl_op', 'mo_sin_rcnt_rev_tl_op', 'mo_sin_rcnt_tl', 'mort_acc', 'mths_since_recent_bc', 'mths_since_recent_bc_dlq', 'mths_since_recent_inq', 'mths_since_recent_revol_delinq', 'num_accts_ever_120_pd', 'num_actv_bc_tl', 'num_actv_rev_tl', 'num_bc_sats', 'num_bc_tl', 'num_il_tl', 'num_op_rev_tl', 'num_rev_accts', 'num_rev_tl_bal_gt_0', 'num_sats', 'num_tl_120dpd_2m', 'num_tl_30dpd', 'num_tl_90g_dpd_24m', 'num_tl_op_past_12m', 'pct_tl_nvr_dlq', 'percent_bc_gt_75', 'pub_rec_bankruptcies', 'tax_liens', 'tot_hi_cred_lim', 'total_bal_ex_mort', 'total_bc_limit', 'total_il_high_credit_limit', 'revol_bal_joint', 'sec_app_fico_range_low', 'sec_app_fico_range_high', 'sec_app_earliest_cr_line', 'sec_app_inq_last_6mths', 'sec_app_mort_acc', 'sec_app_open_acc', 'sec_app_revol_util', 'sec_app_open_act_il', 'sec_app_num_rev_accts', 'sec_app_chargeoff_within_12_mths', 'sec_app_collections_12_mths_ex_med', 'sec_app_mths_since_last_major_derog', 'hardship_flag', 'hardship_type', 'hardship_reason', 'hardship_status', 'deferral_term', 'hardship_amount', 'hardship_start_date', 'hardship_end_date', 'payment_plan_start_date', 'hardship_length', 'hardship_dpd', 'hardship_loan_status', 'orig_projected_additional_accrued_interest', 'hardship_payoff_balance_amount', 'hardship_last_payment_amount', 'disbursement_method', 'debt_settlement_flag', 'debt_settlement_flag_date', 'settlement_status', 'settlement_date', 'settlement_amount', 'settlement_percentage', 'settlement_term']
-2025-09-04 16:59:06 | INFO | Data types:
-2025-09-04 16:59:06 | INFO |   Unnamed: 0.1: Int64
-2025-09-04 16:59:06 | INFO |   Unnamed: 0: Int64
-2025-09-04 16:59:06 | INFO |   member_id: Int64
-2025-09-04 16:59:06 | INFO |   loan_amnt: Float64
-2025-09-04 16:59:06 | INFO |   funded_amnt: Float64
-2025-09-04 16:59:06 | INFO |   funded_amnt_inv: Float64
-2025-09-04 16:59:06 | INFO |   term: string
-2025-09-04 16:59:06 | INFO |   int_rate: Float64
-2025-09-04 16:59:06 | INFO |   installment: Float64
-2025-09-04 16:59:06 | INFO |   grade: string
-2025-09-04 16:59:06 | INFO |   sub_grade: string
-2025-09-04 16:59:06 | INFO |   emp_title: string
-2025-09-04 16:59:06 | INFO |   emp_length: string
-2025-09-04 16:59:06 | INFO |   home_ownership: string
-2025-09-04 16:59:06 | INFO |   annual_inc: Float64
-2025-09-04 16:59:06 | INFO |   verification_status: string
-2025-09-04 16:59:06 | INFO |   issue_d: string
-2025-09-04 16:59:06 | INFO |   loan_status: string
-2025-09-04 16:59:06 | INFO |   pymnt_plan: string
-2025-09-04 16:59:06 | INFO |   url: string
-2025-09-04 16:59:06 | INFO |   desc: string
-2025-09-04 16:59:06 | INFO |   purpose: string
-2025-09-04 16:59:06 | INFO |   title: string
-2025-09-04 16:59:06 | INFO |   zip_code: string
-2025-09-04 16:59:06 | INFO |   addr_state: string
-2025-09-04 16:59:06 | INFO |   dti: Float64
-2025-09-04 16:59:06 | INFO |   delinq_2yrs: Float64
-2025-09-04 16:59:06 | INFO |   earliest_cr_line: string
-2025-09-04 16:59:06 | INFO |   fico_range_low: Float64
-2025-09-04 16:59:06 | INFO |   fico_range_high: Float64
-2025-09-04 16:59:06 | INFO |   inq_last_6mths: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_last_delinq: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_last_record: Float64
-2025-09-04 16:59:06 | INFO |   open_acc: Float64
-2025-09-04 16:59:06 | INFO |   pub_rec: Float64
-2025-09-04 16:59:06 | INFO |   revol_bal: Float64
-2025-09-04 16:59:06 | INFO |   revol_util: Float64
-2025-09-04 16:59:06 | INFO |   total_acc: Float64
-2025-09-04 16:59:06 | INFO |   initial_list_status: string
-2025-09-04 16:59:06 | INFO |   out_prncp: Float64
-2025-09-04 16:59:06 | INFO |   out_prncp_inv: Float64
-2025-09-04 16:59:06 | INFO |   total_pymnt: Float64
-2025-09-04 16:59:06 | INFO |   total_pymnt_inv: Float64
-2025-09-04 16:59:06 | INFO |   total_rec_prncp: Float64
-2025-09-04 16:59:06 | INFO |   total_rec_int: Float64
-2025-09-04 16:59:06 | INFO |   total_rec_late_fee: Float64
-2025-09-04 16:59:06 | INFO |   recoveries: Float64
-2025-09-04 16:59:06 | INFO |   collection_recovery_fee: Float64
-2025-09-04 16:59:06 | INFO |   last_pymnt_d: string
-2025-09-04 16:59:06 | INFO |   last_pymnt_amnt: Float64
-2025-09-04 16:59:06 | INFO |   next_pymnt_d: string
-2025-09-04 16:59:06 | INFO |   last_credit_pull_d: string
-2025-09-04 16:59:06 | INFO |   last_fico_range_high: Float64
-2025-09-04 16:59:06 | INFO |   last_fico_range_low: Float64
-2025-09-04 16:59:06 | INFO |   collections_12_mths_ex_med: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_last_major_derog: Float64
-2025-09-04 16:59:06 | INFO |   policy_code: Float64
-2025-09-04 16:59:06 | INFO |   application_type: string
-2025-09-04 16:59:06 | INFO |   annual_inc_joint: Float64
-2025-09-04 16:59:06 | INFO |   dti_joint: Float64
-2025-09-04 16:59:06 | INFO |   verification_status_joint: string
-2025-09-04 16:59:06 | INFO |   acc_now_delinq: Float64
-2025-09-04 16:59:06 | INFO |   tot_coll_amt: Float64
-2025-09-04 16:59:06 | INFO |   tot_cur_bal: Float64
-2025-09-04 16:59:06 | INFO |   open_acc_6m: Float64
-2025-09-04 16:59:06 | INFO |   open_act_il: Float64
-2025-09-04 16:59:06 | INFO |   open_il_12m: Float64
-2025-09-04 16:59:06 | INFO |   open_il_24m: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_rcnt_il: Float64
-2025-09-04 16:59:06 | INFO |   total_bal_il: Float64
-2025-09-04 16:59:06 | INFO |   il_util: Float64
-2025-09-04 16:59:06 | INFO |   open_rv_12m: Float64
-2025-09-04 16:59:06 | INFO |   open_rv_24m: Float64
-2025-09-04 16:59:06 | INFO |   max_bal_bc: Float64
-2025-09-04 16:59:06 | INFO |   all_util: Float64
-2025-09-04 16:59:06 | INFO |   total_rev_hi_lim: Float64
-2025-09-04 16:59:06 | INFO |   inq_fi: Float64
-2025-09-04 16:59:06 | INFO |   total_cu_tl: Float64
-2025-09-04 16:59:06 | INFO |   inq_last_12m: Float64
-2025-09-04 16:59:06 | INFO |   acc_open_past_24mths: Float64
-2025-09-04 16:59:06 | INFO |   avg_cur_bal: Float64
-2025-09-04 16:59:06 | INFO |   bc_open_to_buy: Float64
-2025-09-04 16:59:06 | INFO |   bc_util: Float64
-2025-09-04 16:59:06 | INFO |   chargeoff_within_12_mths: Float64
-2025-09-04 16:59:06 | INFO |   delinq_amnt: Float64
-2025-09-04 16:59:06 | INFO |   mo_sin_old_il_acct: Float64
-2025-09-04 16:59:06 | INFO |   mo_sin_old_rev_tl_op: Float64
-2025-09-04 16:59:06 | INFO |   mo_sin_rcnt_rev_tl_op: Float64
-2025-09-04 16:59:06 | INFO |   mo_sin_rcnt_tl: Float64
-2025-09-04 16:59:06 | INFO |   mort_acc: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_recent_bc: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_recent_bc_dlq: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_recent_inq: Float64
-2025-09-04 16:59:06 | INFO |   mths_since_recent_revol_delinq: Float64
-2025-09-04 16:59:06 | INFO |   num_accts_ever_120_pd: Float64
-2025-09-04 16:59:06 | INFO |   num_actv_bc_tl: Float64
-2025-09-04 16:59:06 | INFO |   num_actv_rev_tl: Float64
-2025-09-04 16:59:06 | INFO |   num_bc_sats: Float64
-2025-09-04 16:59:06 | INFO |   num_bc_tl: Float64
-2025-09-04 16:59:06 | INFO |   num_il_tl: Float64
-2025-09-04 16:59:06 | INFO |   num_op_rev_tl: Float64
-2025-09-04 16:59:06 | INFO |   num_rev_accts: Float64
-2025-09-04 16:59:06 | INFO |   num_rev_tl_bal_gt_0: Float64
-2025-09-04 16:59:06 | INFO |   num_sats: Float64
-2025-09-04 16:59:06 | INFO |   num_tl_120dpd_2m: Float64
-2025-09-04 16:59:06 | INFO |   num_tl_30dpd: Float64
-2025-09-04 16:59:06 | INFO |   num_tl_90g_dpd_24m: Float64
-2025-09-04 16:59:06 | INFO |   num_tl_op_past_12m: Float64
-2025-09-04 16:59:06 | INFO |   pct_tl_nvr_dlq: Float64
-2025-09-04 16:59:06 | INFO |   percent_bc_gt_75: Float64
-2025-09-04 16:59:06 | INFO |   pub_rec_bankruptcies: Float64
-2025-09-04 16:59:06 | INFO |   tax_liens: Float64
-2025-09-04 16:59:06 | INFO |   tot_hi_cred_lim: Float64
-2025-09-04 16:59:06 | INFO |   total_bal_ex_mort: Float64
-2025-09-04 16:59:06 | INFO |   total_bc_limit: Float64
-2025-09-04 16:59:06 | INFO |   total_il_high_credit_limit: Float64
-2025-09-04 16:59:06 | INFO |   revol_bal_joint: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_fico_range_low: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_fico_range_high: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_earliest_cr_line: string
-2025-09-04 16:59:06 | INFO |   sec_app_inq_last_6mths: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_mort_acc: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_open_acc: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_revol_util: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_open_act_il: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_num_rev_accts: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_chargeoff_within_12_mths: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_collections_12_mths_ex_med: Float64
-2025-09-04 16:59:06 | INFO |   sec_app_mths_since_last_major_derog: Float64
-2025-09-04 16:59:06 | INFO |   hardship_flag: string
-2025-09-04 16:59:06 | INFO |   hardship_type: string
-2025-09-04 16:59:06 | INFO |   hardship_reason: string
-2025-09-04 16:59:06 | INFO |   hardship_status: string
-2025-09-04 16:59:06 | INFO |   deferral_term: Float64
-2025-09-04 16:59:06 | INFO |   hardship_amount: Float64
-2025-09-04 16:59:06 | INFO |   hardship_start_date: string
-2025-09-04 16:59:06 | INFO |   hardship_end_date: string
-2025-09-04 16:59:06 | INFO |   payment_plan_start_date: string
-2025-09-04 16:59:06 | INFO |   hardship_length: Float64
-2025-09-04 16:59:06 | INFO |   hardship_dpd: Float64
-2025-09-04 16:59:06 | INFO |   hardship_loan_status: string
-2025-09-04 16:59:06 | INFO |   orig_projected_additional_accrued_interest: Float64
-2025-09-04 16:59:06 | INFO |   hardship_payoff_balance_amount: Float64
-2025-09-04 16:59:06 | INFO |   hardship_last_payment_amount: Float64
-2025-09-04 16:59:06 | INFO |   disbursement_method: string
-2025-09-04 16:59:06 | INFO |   debt_settlement_flag: string
-2025-09-04 16:59:06 | INFO |   debt_settlement_flag_date: string
-2025-09-04 16:59:06 | INFO |   settlement_status: string
-2025-09-04 16:59:06 | INFO |   settlement_date: string
-2025-09-04 16:59:06 | INFO |   settlement_amount: Float64
-2025-09-04 16:59:06 | INFO |   settlement_percentage: Float64
-2025-09-04 16:59:06 | INFO |   settlement_term: Float64
-2025-09-04 16:59:06 | INFO | STEP 1 COMPLETED: Load data - Shape: (1007987, 152)
-2025-09-04 16:59:06 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:06 | INFO | 
-2025-09-04 16:59:06 | INFO | STEP 2: Build binary target
-2025-09-04 16:59:06 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:06 | INFO | Status column: loan_status
-2025-09-04 16:59:06 | INFO | Target column: flg_target
-2025-09-04 16:59:06 | INFO | Good status values: ['Fully Paid', 'Does not meet the credit policy. Status: Fully Paid']
-2025-09-04 16:59:06 | INFO | Bad status values: ['Charged Off', 'Default', 'Late (31-120 days)', 'Does not meet the credit policy. Status: Charged Off']
-2025-09-04 16:59:06 | INFO | Drop missing status: True
-2025-09-04 16:59:06 | INFO | Original status distribution:
-2025-09-04 16:59:06 | INFO |   Fully Paid: 702354 (69.68%)
-2025-09-04 16:59:06 | INFO |   Charged Off: 268559 (26.64%)
-2025-09-04 16:59:06 | INFO |   Late (31-120 days): 21467 (2.13%)
-2025-09-04 16:59:06 | INFO |   In Grace Period: 8436 (0.84%)
-2025-09-04 16:59:06 | INFO |   Late (16-30 days): 4349 (0.43%)
-2025-09-04 16:59:06 | INFO |   Does not meet the credit policy. Status:Fully Paid: 1988 (0.20%)
-2025-09-04 16:59:06 | INFO |   Does not meet the credit policy. Status:Charged Off: 761 (0.08%)
-2025-09-04 16:59:06 | INFO |   Default: 40 (0.00%)
-2025-09-04 16:59:09 | INFO | Target distribution after building:
-2025-09-04 16:59:09 | INFO |   0: 702354 (70.77%)
-2025-09-04 16:59:09 | INFO |   1: 290066 (29.23%)
-2025-09-04 16:59:09 | INFO | STEP 2 COMPLETED: Build binary target - Shape: (992420, 153)
-2025-09-04 16:59:09 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:10 | INFO | 
-2025-09-04 16:59:10 | INFO | STEP 3: Clean columns
-2025-09-04 16:59:10 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:10 | INFO | Starting shape: (992420, 153)
-2025-09-04 16:59:10 | INFO | Null threshold: 95%
-2025-09-04 16:59:11 | INFO | Columns with >95% nulls (38):
-2025-09-04 16:59:11 | INFO |   member_id: 100.00%
-2025-09-04 16:59:11 | INFO |   orig_projected_additional_accrued_interest: 99.56%
-2025-09-04 16:59:11 | INFO |   sec_app_mths_since_last_major_derog: 99.43%
-2025-09-04 16:59:11 | INFO |   hardship_last_payment_amount: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_amount: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_length: 99.34%
-2025-09-04 16:59:11 | INFO |   payment_plan_start_date: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_status: 99.34%
-2025-09-04 16:59:11 | INFO |   deferral_term: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_loan_status: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_end_date: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_start_date: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_reason: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_dpd: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_payoff_balance_amount: 99.34%
-2025-09-04 16:59:11 | INFO |   hardship_type: 99.34%
-2025-09-04 16:59:11 | INFO |   sec_app_revol_util: 98.50%
-2025-09-04 16:59:11 | INFO |   revol_bal_joint: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_inq_last_6mths: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_collections_12_mths_ex_med: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_chargeoff_within_12_mths: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_num_rev_accts: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_open_acc: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_open_act_il: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_earliest_cr_line: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_fico_range_high: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_fico_range_low: 98.47%
-2025-09-04 16:59:11 | INFO |   sec_app_mort_acc: 98.47%
-2025-09-04 16:59:11 | INFO |   next_pymnt_d: 97.83%
-2025-09-04 16:59:11 | INFO |   verification_status_joint: 97.79%
-2025-09-04 16:59:11 | INFO |   dti_joint: 97.77%
-2025-09-04 16:59:11 | INFO |   annual_inc_joint: 97.77%
-2025-09-04 16:59:11 | INFO |   settlement_term: 96.56%
-2025-09-04 16:59:11 | INFO |   settlement_percentage: 96.56%
-2025-09-04 16:59:11 | INFO |   settlement_status: 96.56%
-2025-09-04 16:59:11 | INFO |   settlement_date: 96.56%
-2025-09-04 16:59:11 | INFO |   debt_settlement_flag_date: 96.56%
-2025-09-04 16:59:11 | INFO |   settlement_amount: 96.56%
-2025-09-04 16:59:12 | INFO | After dropping null columns: (992420, 115)
-2025-09-04 16:59:12 | INFO | Dropping irrelevant columns (12): ['Unnamed: 0', 'Unnamed: 0.1', 'member_id', 'url', 'desc', 'disbursement_method', 'payment_plan_start_date', 'verification_status', 'addr_state', 'zip_code', 'policy_code', 'application_type']
-2025-09-04 16:59:13 | INFO | After dropping irrelevant columns: (992420, 105)
-2025-09-04 16:59:13 | INFO | Dropping ex-post columns (15): ['out_prncp', 'out_prncp_inv', 'total_pymnt_inv', 'total_pymnt', 'total_rec_int', 'total_rec_late_fee', 'recoveries', 'collection_recovery_fee', 'last_pymnt_d', 'last_credit_pull_d', 'recovery_ratio', 'total_rec_prncp', 'last_pymnt_amnt', 'last_fico_range_low', 'last_fico_range_high']
-2025-09-04 16:59:14 | INFO | After dropping ex-post columns: (992420, 91)
-2025-09-04 16:59:14 | INFO | STEP 3 COMPLETED: Clean columns - Final shape: (992420, 91)
-2025-09-04 16:59:14 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:14 | INFO | 
-2025-09-04 16:59:14 | INFO | STEP 4: Derive features
-2025-09-04 16:59:14 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:14 | INFO | Feature derivation toggles:
-2025-09-04 16:59:14 | INFO |   enable_term_integer: ✓
-2025-09-04 16:59:14 | INFO |   enable_emp_length_months: ✓
-2025-09-04 16:59:14 | INFO |   enable_ratio_loan_income: ✓
-2025-09-04 16:59:14 | INFO |   enable_installment_pct_loan: ✓
-2025-09-04 16:59:14 | INFO |   enable_fico_avg: ✓
-2025-09-04 16:59:14 | INFO |   enable_revol_util_ratio: ✓
-2025-09-04 16:59:19 | INFO | New derived columns (5): ['ratio_loan_income', 'fico_avg', 'installment_pct_loan', 'revol_util_ratio', 'emp_length_months']
-2025-09-04 16:59:19 | INFO | STEP 4 COMPLETED: Derive features - Shape: (992420, 96)
-2025-09-04 16:59:19 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:20 | INFO | 
-2025-09-04 16:59:20 | INFO | STEP 5: Separate variables by type (INTELIGENTE)
-2025-09-04 16:59:20 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:28:18 | INFO | ================================================================================
+2025-09-07 00:28:18 | INFO | EDA PIPELINE STARTED
+2025-09-07 00:28:18 | INFO | ================================================================================
+2025-09-07 00:28:18 | INFO | Configuration file: Unknown
+2025-09-07 00:28:18 | INFO | Timestamp: 2025-09-07 00:28:18
+2025-09-07 00:28:18 | INFO | Log file: log_EDA.txt
+2025-09-07 00:28:18 | INFO | ================================================================================
+2025-09-07 00:28:18 | INFO | 🚀 INICIANDO EDA PIPELINE...
+2025-09-07 00:28:18 | INFO | Starting EDA Pipeline execution...
+2025-09-07 00:28:18 | INFO | 
+2025-09-07 00:28:18 | INFO | STEP 1: Load data
+2025-09-07 00:28:18 | INFO | ------------------------------------------------------------
+2025-09-07 00:28:18 | INFO | Loading data from: Loan_data.csv
+2025-09-07 00:28:43 | INFO | Data loaded successfully
+2025-09-07 00:28:43 | INFO | Dataset shape: 1007987 rows × 152 columns
+2025-09-07 00:28:50 | INFO | Memory usage: 3248.91 MB
+2025-09-07 00:28:50 | INFO | Columns: ['Unnamed: 0.1', 'Unnamed: 0', 'member_id', 'loan_amnt', 'funded_amnt', 'funded_amnt_inv', 'term', 'int_rate', 'installment', 'grade', 'sub_grade', 'emp_title', 'emp_length', 'home_ownership', 'annual_inc', 'verification_status', 'issue_d', 'loan_status', 'pymnt_plan', 'url', 'desc', 'purpose', 'title', 'zip_code', 'addr_state', 'dti', 'delinq_2yrs', 'earliest_cr_line', 'fico_range_low', 'fico_range_high', 'inq_last_6mths', 'mths_since_last_delinq', 'mths_since_last_record', 'open_acc', 'pub_rec', 'revol_bal', 'revol_util', 'total_acc', 'initial_list_status', 'out_prncp', 'out_prncp_inv', 'total_pymnt', 'total_pymnt_inv', 'total_rec_prncp', 'total_rec_int', 'total_rec_late_fee', 'recoveries', 'collection_recovery_fee', 'last_pymnt_d', 'last_pymnt_amnt', 'next_pymnt_d', 'last_credit_pull_d', 'last_fico_range_high', 'last_fico_range_low', 'collections_12_mths_ex_med', 'mths_since_last_major_derog', 'policy_code', 'application_type', 'annual_inc_joint', 'dti_joint', 'verification_status_joint', 'acc_now_delinq', 'tot_coll_amt', 'tot_cur_bal', 'open_acc_6m', 'open_act_il', 'open_il_12m', 'open_il_24m', 'mths_since_rcnt_il', 'total_bal_il', 'il_util', 'open_rv_12m', 'open_rv_24m', 'max_bal_bc', 'all_util', 'total_rev_hi_lim', 'inq_fi', 'total_cu_tl', 'inq_last_12m', 'acc_open_past_24mths', 'avg_cur_bal', 'bc_open_to_buy', 'bc_util', 'chargeoff_within_12_mths', 'delinq_amnt', 'mo_sin_old_il_acct', 'mo_sin_old_rev_tl_op', 'mo_sin_rcnt_rev_tl_op', 'mo_sin_rcnt_tl', 'mort_acc', 'mths_since_recent_bc', 'mths_since_recent_bc_dlq', 'mths_since_recent_inq', 'mths_since_recent_revol_delinq', 'num_accts_ever_120_pd', 'num_actv_bc_tl', 'num_actv_rev_tl', 'num_bc_sats', 'num_bc_tl', 'num_il_tl', 'num_op_rev_tl', 'num_rev_accts', 'num_rev_tl_bal_gt_0', 'num_sats', 'num_tl_120dpd_2m', 'num_tl_30dpd', 'num_tl_90g_dpd_24m', 'num_tl_op_past_12m', 'pct_tl_nvr_dlq', 'percent_bc_gt_75', 'pub_rec_bankruptcies', 'tax_liens', 'tot_hi_cred_lim', 'total_bal_ex_mort', 'total_bc_limit', 'total_il_high_credit_limit', 'revol_bal_joint', 'sec_app_fico_range_low', 'sec_app_fico_range_high', 'sec_app_earliest_cr_line', 'sec_app_inq_last_6mths', 'sec_app_mort_acc', 'sec_app_open_acc', 'sec_app_revol_util', 'sec_app_open_act_il', 'sec_app_num_rev_accts', 'sec_app_chargeoff_within_12_mths', 'sec_app_collections_12_mths_ex_med', 'sec_app_mths_since_last_major_derog', 'hardship_flag', 'hardship_type', 'hardship_reason', 'hardship_status', 'deferral_term', 'hardship_amount', 'hardship_start_date', 'hardship_end_date', 'payment_plan_start_date', 'hardship_length', 'hardship_dpd', 'hardship_loan_status', 'orig_projected_additional_accrued_interest', 'hardship_payoff_balance_amount', 'hardship_last_payment_amount', 'disbursement_method', 'debt_settlement_flag', 'debt_settlement_flag_date', 'settlement_status', 'settlement_date', 'settlement_amount', 'settlement_percentage', 'settlement_term']
+2025-09-07 00:28:50 | INFO | Data types:
+2025-09-07 00:28:50 | INFO |   Unnamed: 0.1: Int64
+2025-09-07 00:28:50 | INFO |   Unnamed: 0: Int64
+2025-09-07 00:28:50 | INFO |   member_id: Int64
+2025-09-07 00:28:50 | INFO |   loan_amnt: Float64
+2025-09-07 00:28:50 | INFO |   funded_amnt: Float64
+2025-09-07 00:28:50 | INFO |   funded_amnt_inv: Float64
+2025-09-07 00:28:50 | INFO |   term: string
+2025-09-07 00:28:50 | INFO |   int_rate: Float64
+2025-09-07 00:28:50 | INFO |   installment: Float64
+2025-09-07 00:28:50 | INFO |   grade: string
+2025-09-07 00:28:50 | INFO |   sub_grade: string
+2025-09-07 00:28:50 | INFO |   emp_title: string
+2025-09-07 00:28:50 | INFO |   emp_length: string
+2025-09-07 00:28:50 | INFO |   home_ownership: string
+2025-09-07 00:28:50 | INFO |   annual_inc: Float64
+2025-09-07 00:28:50 | INFO |   verification_status: string
+2025-09-07 00:28:50 | INFO |   issue_d: string
+2025-09-07 00:28:50 | INFO |   loan_status: string
+2025-09-07 00:28:50 | INFO |   pymnt_plan: string
+2025-09-07 00:28:50 | INFO |   url: string
+2025-09-07 00:28:50 | INFO |   desc: string
+2025-09-07 00:28:50 | INFO |   purpose: string
+2025-09-07 00:28:50 | INFO |   title: string
+2025-09-07 00:28:50 | INFO |   zip_code: string
+2025-09-07 00:28:50 | INFO |   addr_state: string
+2025-09-07 00:28:50 | INFO |   dti: Float64
+2025-09-07 00:28:50 | INFO |   delinq_2yrs: Float64
+2025-09-07 00:28:50 | INFO |   earliest_cr_line: string
+2025-09-07 00:28:50 | INFO |   fico_range_low: Float64
+2025-09-07 00:28:50 | INFO |   fico_range_high: Float64
+2025-09-07 00:28:50 | INFO |   inq_last_6mths: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_last_delinq: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_last_record: Float64
+2025-09-07 00:28:50 | INFO |   open_acc: Float64
+2025-09-07 00:28:50 | INFO |   pub_rec: Float64
+2025-09-07 00:28:50 | INFO |   revol_bal: Float64
+2025-09-07 00:28:50 | INFO |   revol_util: Float64
+2025-09-07 00:28:50 | INFO |   total_acc: Float64
+2025-09-07 00:28:50 | INFO |   initial_list_status: string
+2025-09-07 00:28:50 | INFO |   out_prncp: Float64
+2025-09-07 00:28:50 | INFO |   out_prncp_inv: Float64
+2025-09-07 00:28:50 | INFO |   total_pymnt: Float64
+2025-09-07 00:28:50 | INFO |   total_pymnt_inv: Float64
+2025-09-07 00:28:50 | INFO |   total_rec_prncp: Float64
+2025-09-07 00:28:50 | INFO |   total_rec_int: Float64
+2025-09-07 00:28:50 | INFO |   total_rec_late_fee: Float64
+2025-09-07 00:28:50 | INFO |   recoveries: Float64
+2025-09-07 00:28:50 | INFO |   collection_recovery_fee: Float64
+2025-09-07 00:28:50 | INFO |   last_pymnt_d: string
+2025-09-07 00:28:50 | INFO |   last_pymnt_amnt: Float64
+2025-09-07 00:28:50 | INFO |   next_pymnt_d: string
+2025-09-07 00:28:50 | INFO |   last_credit_pull_d: string
+2025-09-07 00:28:50 | INFO |   last_fico_range_high: Float64
+2025-09-07 00:28:50 | INFO |   last_fico_range_low: Float64
+2025-09-07 00:28:50 | INFO |   collections_12_mths_ex_med: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_last_major_derog: Float64
+2025-09-07 00:28:50 | INFO |   policy_code: Float64
+2025-09-07 00:28:50 | INFO |   application_type: string
+2025-09-07 00:28:50 | INFO |   annual_inc_joint: Float64
+2025-09-07 00:28:50 | INFO |   dti_joint: Float64
+2025-09-07 00:28:50 | INFO |   verification_status_joint: string
+2025-09-07 00:28:50 | INFO |   acc_now_delinq: Float64
+2025-09-07 00:28:50 | INFO |   tot_coll_amt: Float64
+2025-09-07 00:28:50 | INFO |   tot_cur_bal: Float64
+2025-09-07 00:28:50 | INFO |   open_acc_6m: Float64
+2025-09-07 00:28:50 | INFO |   open_act_il: Float64
+2025-09-07 00:28:50 | INFO |   open_il_12m: Float64
+2025-09-07 00:28:50 | INFO |   open_il_24m: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_rcnt_il: Float64
+2025-09-07 00:28:50 | INFO |   total_bal_il: Float64
+2025-09-07 00:28:50 | INFO |   il_util: Float64
+2025-09-07 00:28:50 | INFO |   open_rv_12m: Float64
+2025-09-07 00:28:50 | INFO |   open_rv_24m: Float64
+2025-09-07 00:28:50 | INFO |   max_bal_bc: Float64
+2025-09-07 00:28:50 | INFO |   all_util: Float64
+2025-09-07 00:28:50 | INFO |   total_rev_hi_lim: Float64
+2025-09-07 00:28:50 | INFO |   inq_fi: Float64
+2025-09-07 00:28:50 | INFO |   total_cu_tl: Float64
+2025-09-07 00:28:50 | INFO |   inq_last_12m: Float64
+2025-09-07 00:28:50 | INFO |   acc_open_past_24mths: Float64
+2025-09-07 00:28:50 | INFO |   avg_cur_bal: Float64
+2025-09-07 00:28:50 | INFO |   bc_open_to_buy: Float64
+2025-09-07 00:28:50 | INFO |   bc_util: Float64
+2025-09-07 00:28:50 | INFO |   chargeoff_within_12_mths: Float64
+2025-09-07 00:28:50 | INFO |   delinq_amnt: Float64
+2025-09-07 00:28:50 | INFO |   mo_sin_old_il_acct: Float64
+2025-09-07 00:28:50 | INFO |   mo_sin_old_rev_tl_op: Float64
+2025-09-07 00:28:50 | INFO |   mo_sin_rcnt_rev_tl_op: Float64
+2025-09-07 00:28:50 | INFO |   mo_sin_rcnt_tl: Float64
+2025-09-07 00:28:50 | INFO |   mort_acc: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_recent_bc: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_recent_bc_dlq: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_recent_inq: Float64
+2025-09-07 00:28:50 | INFO |   mths_since_recent_revol_delinq: Float64
+2025-09-07 00:28:50 | INFO |   num_accts_ever_120_pd: Float64
+2025-09-07 00:28:50 | INFO |   num_actv_bc_tl: Float64
+2025-09-07 00:28:50 | INFO |   num_actv_rev_tl: Float64
+2025-09-07 00:28:50 | INFO |   num_bc_sats: Float64
+2025-09-07 00:28:50 | INFO |   num_bc_tl: Float64
+2025-09-07 00:28:50 | INFO |   num_il_tl: Float64
+2025-09-07 00:28:50 | INFO |   num_op_rev_tl: Float64
+2025-09-07 00:28:50 | INFO |   num_rev_accts: Float64
+2025-09-07 00:28:50 | INFO |   num_rev_tl_bal_gt_0: Float64
+2025-09-07 00:28:50 | INFO |   num_sats: Float64
+2025-09-07 00:28:50 | INFO |   num_tl_120dpd_2m: Float64
+2025-09-07 00:28:50 | INFO |   num_tl_30dpd: Float64
+2025-09-07 00:28:50 | INFO |   num_tl_90g_dpd_24m: Float64
+2025-09-07 00:28:50 | INFO |   num_tl_op_past_12m: Float64
+2025-09-07 00:28:50 | INFO |   pct_tl_nvr_dlq: Float64
+2025-09-07 00:28:50 | INFO |   percent_bc_gt_75: Float64
+2025-09-07 00:28:50 | INFO |   pub_rec_bankruptcies: Float64
+2025-09-07 00:28:50 | INFO |   tax_liens: Float64
+2025-09-07 00:28:50 | INFO |   tot_hi_cred_lim: Float64
+2025-09-07 00:28:50 | INFO |   total_bal_ex_mort: Float64
+2025-09-07 00:28:50 | INFO |   total_bc_limit: Float64
+2025-09-07 00:28:50 | INFO |   total_il_high_credit_limit: Float64
+2025-09-07 00:28:50 | INFO |   revol_bal_joint: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_fico_range_low: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_fico_range_high: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_earliest_cr_line: string
+2025-09-07 00:28:50 | INFO |   sec_app_inq_last_6mths: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_mort_acc: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_open_acc: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_revol_util: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_open_act_il: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_num_rev_accts: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_chargeoff_within_12_mths: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_collections_12_mths_ex_med: Float64
+2025-09-07 00:28:50 | INFO |   sec_app_mths_since_last_major_derog: Float64
+2025-09-07 00:28:50 | INFO |   hardship_flag: string
+2025-09-07 00:28:50 | INFO |   hardship_type: string
+2025-09-07 00:28:50 | INFO |   hardship_reason: string
+2025-09-07 00:28:50 | INFO |   hardship_status: string
+2025-09-07 00:28:50 | INFO |   deferral_term: Float64
+2025-09-07 00:28:50 | INFO |   hardship_amount: Float64
+2025-09-07 00:28:50 | INFO |   hardship_start_date: string
+2025-09-07 00:28:50 | INFO |   hardship_end_date: string
+2025-09-07 00:28:50 | INFO |   payment_plan_start_date: string
+2025-09-07 00:28:50 | INFO |   hardship_length: Float64
+2025-09-07 00:28:50 | INFO |   hardship_dpd: Float64
+2025-09-07 00:28:50 | INFO |   hardship_loan_status: string
+2025-09-07 00:28:50 | INFO |   orig_projected_additional_accrued_interest: Float64
+2025-09-07 00:28:50 | INFO |   hardship_payoff_balance_amount: Float64
+2025-09-07 00:28:50 | INFO |   hardship_last_payment_amount: Float64
+2025-09-07 00:28:50 | INFO |   disbursement_method: string
+2025-09-07 00:28:50 | INFO |   debt_settlement_flag: string
+2025-09-07 00:28:50 | INFO |   debt_settlement_flag_date: string
+2025-09-07 00:28:50 | INFO |   settlement_status: string
+2025-09-07 00:28:50 | INFO |   settlement_date: string
+2025-09-07 00:28:50 | INFO |   settlement_amount: Float64
+2025-09-07 00:28:50 | INFO |   settlement_percentage: Float64
+2025-09-07 00:28:50 | INFO |   settlement_term: Float64
+2025-09-07 00:28:50 | INFO | STEP 1 COMPLETED: Load data - Shape: (1007987, 152)
+2025-09-07 00:28:50 | INFO | ------------------------------------------------------------
+2025-09-07 00:28:50 | INFO | 
+2025-09-07 00:28:50 | INFO | STEP 2: Build binary target
+2025-09-07 00:28:50 | INFO | ------------------------------------------------------------
+2025-09-07 00:28:50 | INFO | Status column: loan_status
+2025-09-07 00:28:50 | INFO | Target column: flg_target
+2025-09-07 00:28:50 | INFO | Good status values: ['Fully Paid', 'Does not meet the credit policy. Status: Fully Paid']
+2025-09-07 00:28:50 | INFO | Bad status values: ['Charged Off', 'Default', 'Late (31-120 days)', 'Does not meet the credit policy. Status: Charged Off']
+2025-09-07 00:28:50 | INFO | Drop missing status: True
+2025-09-07 00:28:50 | INFO | Original status distribution:
+2025-09-07 00:28:50 | INFO |   Fully Paid: 702354 (69.68%)
+2025-09-07 00:28:50 | INFO |   Charged Off: 268559 (26.64%)
+2025-09-07 00:28:50 | INFO |   Late (31-120 days): 21467 (2.13%)
+2025-09-07 00:28:50 | INFO |   In Grace Period: 8436 (0.84%)
+2025-09-07 00:28:50 | INFO |   Late (16-30 days): 4349 (0.43%)
+2025-09-07 00:28:50 | INFO |   Does not meet the credit policy. Status:Fully Paid: 1988 (0.20%)
+2025-09-07 00:28:50 | INFO |   Does not meet the credit policy. Status:Charged Off: 761 (0.08%)
+2025-09-07 00:28:50 | INFO |   Default: 40 (0.00%)
+2025-09-07 00:28:55 | INFO | Target distribution after building:
+2025-09-07 00:28:55 | INFO |   0: 702354 (70.77%)
+2025-09-07 00:28:55 | INFO |   1: 290066 (29.23%)
+2025-09-07 00:28:55 | INFO | STEP 2 COMPLETED: Build binary target - Shape: (992420, 153)
+2025-09-07 00:28:55 | INFO | ------------------------------------------------------------
+2025-09-07 00:28:55 | INFO | 
+2025-09-07 00:28:55 | INFO | STEP 3: Clean columns
+2025-09-07 00:28:55 | INFO | ------------------------------------------------------------
+2025-09-07 00:28:57 | INFO | Starting shape: (992420, 153)
+2025-09-07 00:28:57 | INFO | Null threshold: 95%
+2025-09-07 00:28:58 | INFO | Columns with >95% nulls (38):
+2025-09-07 00:28:58 | INFO |   member_id: 100.00%
+2025-09-07 00:28:58 | INFO |   orig_projected_additional_accrued_interest: 99.56%
+2025-09-07 00:28:58 | INFO |   sec_app_mths_since_last_major_derog: 99.43%
+2025-09-07 00:28:58 | INFO |   hardship_last_payment_amount: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_amount: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_length: 99.34%
+2025-09-07 00:28:58 | INFO |   payment_plan_start_date: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_status: 99.34%
+2025-09-07 00:28:58 | INFO |   deferral_term: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_loan_status: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_end_date: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_start_date: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_reason: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_dpd: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_payoff_balance_amount: 99.34%
+2025-09-07 00:28:58 | INFO |   hardship_type: 99.34%
+2025-09-07 00:28:58 | INFO |   sec_app_revol_util: 98.50%
+2025-09-07 00:28:58 | INFO |   revol_bal_joint: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_inq_last_6mths: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_collections_12_mths_ex_med: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_chargeoff_within_12_mths: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_num_rev_accts: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_open_acc: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_open_act_il: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_earliest_cr_line: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_fico_range_high: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_fico_range_low: 98.47%
+2025-09-07 00:28:58 | INFO |   sec_app_mort_acc: 98.47%
+2025-09-07 00:28:58 | INFO |   next_pymnt_d: 97.83%
+2025-09-07 00:28:58 | INFO |   verification_status_joint: 97.79%
+2025-09-07 00:28:58 | INFO |   dti_joint: 97.77%
+2025-09-07 00:28:58 | INFO |   annual_inc_joint: 97.77%
+2025-09-07 00:28:58 | INFO |   settlement_term: 96.56%
+2025-09-07 00:28:58 | INFO |   settlement_percentage: 96.56%
+2025-09-07 00:28:58 | INFO |   settlement_status: 96.56%
+2025-09-07 00:28:58 | INFO |   settlement_date: 96.56%
+2025-09-07 00:28:58 | INFO |   debt_settlement_flag_date: 96.56%
+2025-09-07 00:28:58 | INFO |   settlement_amount: 96.56%
+2025-09-07 00:28:59 | INFO | After dropping null columns: (992420, 115)
+2025-09-07 00:28:59 | INFO | Dropping irrelevant columns (12): ['Unnamed: 0', 'Unnamed: 0.1', 'member_id', 'url', 'desc', 'disbursement_method', 'payment_plan_start_date', 'verification_status', 'addr_state', 'zip_code', 'policy_code', 'application_type']
+2025-09-07 00:29:00 | INFO | After dropping irrelevant columns: (992420, 105)
+2025-09-07 00:29:00 | INFO | Dropping ex-post columns (15): ['out_prncp', 'out_prncp_inv', 'total_pymnt_inv', 'total_pymnt', 'total_rec_int', 'total_rec_late_fee', 'recoveries', 'collection_recovery_fee', 'last_pymnt_d', 'last_credit_pull_d', 'recovery_ratio', 'total_rec_prncp', 'last_pymnt_amnt', 'last_fico_range_low', 'last_fico_range_high']
+2025-09-07 00:29:00 | INFO | After dropping ex-post columns: (992420, 91)
+2025-09-07 00:29:00 | INFO | STEP 3 COMPLETED: Clean columns - Final shape: (992420, 91)
+2025-09-07 00:29:00 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:01 | INFO | 
+2025-09-07 00:29:01 | INFO | STEP 4: Derive features
+2025-09-07 00:29:01 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:01 | INFO | Feature derivation toggles:
+2025-09-07 00:29:01 | INFO |   enable_term_integer: ✓
+2025-09-07 00:29:01 | INFO |   enable_emp_length_months: ✓
+2025-09-07 00:29:01 | INFO |   enable_ratio_loan_income: ✓
+2025-09-07 00:29:01 | INFO |   enable_installment_pct_loan: ✓
+2025-09-07 00:29:01 | INFO |   enable_fico_avg: ✓
+2025-09-07 00:29:01 | INFO |   enable_revol_util_ratio: ✓
+2025-09-07 00:29:01 | INFO |   enable_installment_income_ratio: ✓
+2025-09-07 00:29:05 | INFO | New derived columns (6): ['emp_length_months', 'fico_avg', 'installment_pct_loan', 'revol_util_ratio', 'ratio_loan_income', 'installment_income_ratio']
+2025-09-07 00:29:05 | INFO | STEP 4 COMPLETED: Derive features - Shape: (992420, 97)
+2025-09-07 00:29:05 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:05 | INFO | 
+2025-09-07 00:29:05 | INFO | STEP 5: Separate variables by type (INTELIGENTE)
+2025-09-07 00:29:05 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:05 | INFO | 
 🔍 ANALIZANDO SEPARACIÓN INTELIGENTE DE VARIABLES
-2025-09-04 16:59:20 | INFO | ============================================================
-2025-09-04 16:59:20 | INFO | Dataset: 992420 filas × 96 columnas
-2025-09-04 16:59:20 | INFO | Máximo valores únicos para categóricas: 20
-2025-09-04 16:59:20 | INFO | Máximo concentración por valor: 98.0%
-2025-09-04 16:59:20 | INFO | Variables protegidas: ['int_rate']
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:05 | INFO | ============================================================
+2025-09-07 00:29:05 | INFO | Dataset: 992420 filas × 97 columnas
+2025-09-07 00:29:05 | INFO | Máximo valores únicos para categóricas: 20
+2025-09-07 00:29:05 | INFO | Máximo concentración por valor: 98.0%
+2025-09-07 00:29:05 | INFO | Variables protegidas: ['int_rate']
+2025-09-07 00:29:05 | INFO | 
 📊 Analizando columna: loan_amnt
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:05 | INFO | 
 📊 Analizando columna: funded_amnt
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:05 | INFO | 
 📊 Analizando columna: funded_amnt_inv
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:05 | INFO | 
 📊 Analizando columna: term
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:05 | INFO | 
 📊 Analizando columna: int_rate
-2025-09-04 16:59:20 | INFO |   🔍 Tipo de datos: Float64
-2025-09-04 16:59:20 | INFO |   🛡️ PROTEGIDA: Variable protegida, forzada como NUMÉRICA
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:05 | INFO |   🔍 Tipo de datos: Float64
+2025-09-07 00:29:05 | INFO |   🛡️ PROTEGIDA: Variable protegida, forzada como NUMÉRICA
+2025-09-07 00:29:05 | INFO | 
 📊 Analizando columna: installment
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:06 | INFO | 
 📊 Analizando columna: grade
-2025-09-04 16:59:20 | INFO |   📈 Cardinalidad: 7 valores únicos
-2025-09-04 16:59:20 | INFO |   📊 Concentración: 28.9% (valor más común)
-2025-09-04 16:59:20 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:06 | INFO |   📈 Cardinalidad: 7 valores únicos
+2025-09-07 00:29:06 | INFO |   📊 Concentración: 28.9% (valor más común)
+2025-09-07 00:29:06 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:06 | INFO | 
 📊 Analizando columna: sub_grade
-2025-09-04 16:59:20 | INFO |   📈 Cardinalidad: 35 valores únicos
-2025-09-04 16:59:20 | INFO |   📊 Concentración: 6.4% (valor más común)
-2025-09-04 16:59:20 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (35 > 20)
-2025-09-04 16:59:20 | INFO | 
+2025-09-07 00:29:06 | INFO |   📈 Cardinalidad: 35 valores únicos
+2025-09-07 00:29:06 | INFO |   📊 Concentración: 6.4% (valor más común)
+2025-09-07 00:29:06 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (35 > 20)
+2025-09-07 00:29:06 | INFO | 
 📊 Analizando columna: emp_title
-2025-09-04 16:59:21 | INFO |   📈 Cardinalidad: 314870 valores únicos
-2025-09-04 16:59:21 | INFO |   📊 Concentración: 1.6% (valor más común)
-2025-09-04 16:59:21 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (314870 > 20)
-2025-09-04 16:59:21 | INFO | 
+2025-09-07 00:29:07 | INFO |   📈 Cardinalidad: 314870 valores únicos
+2025-09-07 00:29:07 | INFO |   📊 Concentración: 1.6% (valor más común)
+2025-09-07 00:29:07 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (314870 > 20)
+2025-09-07 00:29:07 | INFO | 
 📊 Analizando columna: emp_length
-2025-09-04 16:59:21 | INFO |   📈 Cardinalidad: 11 valores únicos
-2025-09-04 16:59:21 | INFO |   📊 Concentración: 34.6% (valor más común)
-2025-09-04 16:59:21 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:21 | INFO | 
+2025-09-07 00:29:07 | INFO |   📈 Cardinalidad: 11 valores únicos
+2025-09-07 00:29:07 | INFO |   📊 Concentración: 34.6% (valor más común)
+2025-09-07 00:29:07 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:07 | INFO | 
 📊 Analizando columna: home_ownership
-2025-09-04 16:59:21 | INFO |   📈 Cardinalidad: 6 valores únicos
-2025-09-04 16:59:21 | INFO |   📊 Concentración: 49.0% (valor más común)
-2025-09-04 16:59:21 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:21 | INFO | 
+2025-09-07 00:29:07 | INFO |   📈 Cardinalidad: 6 valores únicos
+2025-09-07 00:29:07 | INFO |   📊 Concentración: 49.0% (valor más común)
+2025-09-07 00:29:07 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:07 | INFO | 
 📊 Analizando columna: annual_inc
-2025-09-04 16:59:21 | INFO | 
+2025-09-07 00:29:07 | INFO | 
 📊 Analizando columna: issue_d
-2025-09-04 16:59:22 | INFO |   📈 Cardinalidad: 139 valores únicos
-2025-09-04 16:59:22 | INFO |   📊 Concentración: 5.0% (valor más común)
-2025-09-04 16:59:22 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (139 > 20)
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:07 | INFO |   📈 Cardinalidad: 139 valores únicos
+2025-09-07 00:29:07 | INFO |   📊 Concentración: 5.0% (valor más común)
+2025-09-07 00:29:07 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (139 > 20)
+2025-09-07 00:29:07 | INFO | 
 📊 Analizando columna: loan_status
-2025-09-04 16:59:22 | INFO |   📈 Cardinalidad: 4 valores únicos
-2025-09-04 16:59:22 | INFO |   📊 Concentración: 70.8% (valor más común)
-2025-09-04 16:59:22 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:07 | INFO |   📈 Cardinalidad: 4 valores únicos
+2025-09-07 00:29:07 | INFO |   📊 Concentración: 70.8% (valor más común)
+2025-09-07 00:29:07 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:07 | INFO | 
 📊 Analizando columna: pymnt_plan
-2025-09-04 16:59:22 | INFO |   📈 Cardinalidad: 2 valores únicos
-2025-09-04 16:59:22 | INFO |   📊 Concentración: 99.9% (valor más común)
-2025-09-04 16:59:22 | INFO |   ❌ DESCARTADA: Concentración excesiva (99.9% > 98.0%)
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:08 | INFO |   📈 Cardinalidad: 2 valores únicos
+2025-09-07 00:29:08 | INFO |   📊 Concentración: 99.9% (valor más común)
+2025-09-07 00:29:08 | INFO |   ❌ DESCARTADA: Concentración excesiva (99.9% > 98.0%)
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: purpose
-2025-09-04 16:59:22 | INFO |   📈 Cardinalidad: 14 valores únicos
-2025-09-04 16:59:22 | INFO |   📊 Concentración: 58.3% (valor más común)
-2025-09-04 16:59:22 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:08 | INFO |   📈 Cardinalidad: 14 valores únicos
+2025-09-07 00:29:08 | INFO |   📊 Concentración: 58.3% (valor más común)
+2025-09-07 00:29:08 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: title
-2025-09-04 16:59:22 | INFO |   📈 Cardinalidad: 61675 valores únicos
-2025-09-04 16:59:22 | INFO |   📊 Concentración: 47.0% (valor más común)
-2025-09-04 16:59:22 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (61675 > 20)
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:08 | INFO |   📈 Cardinalidad: 61675 valores únicos
+2025-09-07 00:29:08 | INFO |   📊 Concentración: 47.0% (valor más común)
+2025-09-07 00:29:08 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (61675 > 20)
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: dti
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: delinq_2yrs
-2025-09-04 16:59:22 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: earliest_cr_line
-2025-09-04 16:59:23 | INFO |   📈 Cardinalidad: 730 valores únicos
-2025-09-04 16:59:23 | INFO |   📊 Concentración: 0.7% (valor más común)
-2025-09-04 16:59:23 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (730 > 20)
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO |   📈 Cardinalidad: 730 valores únicos
+2025-09-07 00:29:08 | INFO |   📊 Concentración: 0.7% (valor más común)
+2025-09-07 00:29:08 | INFO |   ❌ DESCARTADA: Demasiados valores únicos (730 > 20)
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: fico_range_low
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: fico_range_high
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: inq_last_6mths
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: mths_since_last_delinq
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: mths_since_last_record
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: open_acc
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: pub_rec
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: revol_bal
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: revol_util
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: total_acc
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:08 | INFO | 
 📊 Analizando columna: initial_list_status
-2025-09-04 16:59:23 | INFO |   📈 Cardinalidad: 2 valores únicos
-2025-09-04 16:59:23 | INFO |   📊 Concentración: 55.9% (valor más común)
-2025-09-04 16:59:23 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO |   📈 Cardinalidad: 2 valores únicos
+2025-09-07 00:29:09 | INFO |   📊 Concentración: 55.9% (valor más común)
+2025-09-07 00:29:09 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: collections_12_mths_ex_med
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mths_since_last_major_derog
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: acc_now_delinq
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: tot_coll_amt
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: tot_cur_bal
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: open_acc_6m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: open_act_il
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: open_il_12m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: open_il_24m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mths_since_rcnt_il
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: total_bal_il
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: il_util
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: open_rv_12m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: open_rv_24m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: max_bal_bc
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: all_util
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: total_rev_hi_lim
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: inq_fi
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: total_cu_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: inq_last_12m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: acc_open_past_24mths
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: avg_cur_bal
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: bc_open_to_buy
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: bc_util
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: chargeoff_within_12_mths
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: delinq_amnt
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mo_sin_old_il_acct
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mo_sin_old_rev_tl_op
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mo_sin_rcnt_rev_tl_op
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mo_sin_rcnt_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mort_acc
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mths_since_recent_bc
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mths_since_recent_bc_dlq
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mths_since_recent_inq
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: mths_since_recent_revol_delinq
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_accts_ever_120_pd
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_actv_bc_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_actv_rev_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_bc_sats
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_bc_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_il_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_op_rev_tl
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_rev_accts
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_rev_tl_bal_gt_0
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_sats
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_tl_120dpd_2m
-2025-09-04 16:59:23 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_tl_30dpd
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_tl_90g_dpd_24m
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: num_tl_op_past_12m
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: pct_tl_nvr_dlq
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: percent_bc_gt_75
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: pub_rec_bankruptcies
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: tax_liens
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: tot_hi_cred_lim
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: total_bal_ex_mort
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: total_bc_limit
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: total_il_high_credit_limit
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: hardship_flag
-2025-09-04 16:59:24 | INFO |   📈 Cardinalidad: 2 valores únicos
-2025-09-04 16:59:24 | INFO |   📊 Concentración: 99.9% (valor más común)
-2025-09-04 16:59:24 | INFO |   ❌ DESCARTADA: Concentración excesiva (99.9% > 98.0%)
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO |   📈 Cardinalidad: 2 valores únicos
+2025-09-07 00:29:09 | INFO |   📊 Concentración: 99.9% (valor más común)
+2025-09-07 00:29:09 | INFO |   ❌ DESCARTADA: Concentración excesiva (99.9% > 98.0%)
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: debt_settlement_flag
-2025-09-04 16:59:24 | INFO |   📈 Cardinalidad: 2 valores únicos
-2025-09-04 16:59:24 | INFO |   📊 Concentración: 96.6% (valor más común)
-2025-09-04 16:59:24 | INFO |   ✅ APROBADA como CATEGÓRICA
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO |   📈 Cardinalidad: 2 valores únicos
+2025-09-07 00:29:09 | INFO |   📊 Concentración: 96.6% (valor más común)
+2025-09-07 00:29:09 | INFO |   ✅ APROBADA como CATEGÓRICA
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: emp_length_months
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: ratio_loan_income
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: installment_pct_loan
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: fico_avg
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
 📊 Analizando columna: revol_util_ratio
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | 
+📊 Analizando columna: installment_income_ratio
+2025-09-07 00:29:09 | INFO | 
 🎯 RESULTADO FINAL DE SEPARACIÓN:
-2025-09-04 16:59:24 | INFO | ============================================================
-2025-09-04 16:59:24 | INFO | ✅ Variables NUMÉRICAS: 81
-2025-09-04 16:59:24 | INFO |    • loan_amnt
-2025-09-04 16:59:24 | INFO |    • funded_amnt
-2025-09-04 16:59:24 | INFO |    • funded_amnt_inv
-2025-09-04 16:59:24 | INFO |    • term
-2025-09-04 16:59:24 | INFO |    • int_rate
-2025-09-04 16:59:24 | INFO |    • ... y 76 más
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO | ============================================================
+2025-09-07 00:29:09 | INFO | ✅ Variables NUMÉRICAS: 82
+2025-09-07 00:29:09 | INFO |    • loan_amnt
+2025-09-07 00:29:09 | INFO |    • funded_amnt
+2025-09-07 00:29:09 | INFO |    • funded_amnt_inv
+2025-09-07 00:29:09 | INFO |    • term
+2025-09-07 00:29:09 | INFO |    • int_rate
+2025-09-07 00:29:09 | INFO |    • ... y 77 más
+2025-09-07 00:29:09 | INFO | 
 ✅ Variables CATEGÓRICAS: 7
-2025-09-04 16:59:24 | INFO |    • grade (7 valores únicos)
-2025-09-04 16:59:24 | INFO |    • emp_length (11 valores únicos)
-2025-09-04 16:59:24 | INFO |    • home_ownership (6 valores únicos)
-2025-09-04 16:59:24 | INFO |    • loan_status (4 valores únicos)
-2025-09-04 16:59:24 | INFO |    • purpose (14 valores únicos)
-2025-09-04 16:59:24 | INFO |    • ... y 2 más
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:09 | INFO |    • grade (7 valores únicos)
+2025-09-07 00:29:09 | INFO |    • emp_length (11 valores únicos)
+2025-09-07 00:29:10 | INFO |    • home_ownership (6 valores únicos)
+2025-09-07 00:29:10 | INFO |    • loan_status (4 valores únicos)
+2025-09-07 00:29:10 | INFO |    • purpose (14 valores únicos)
+2025-09-07 00:29:10 | INFO |    • ... y 2 más
+2025-09-07 00:29:10 | INFO | 
 ❌ Variables DESCARTADAS: 7
-2025-09-04 16:59:24 | INFO |    • sub_grade
-2025-09-04 16:59:24 | INFO |    • emp_title
-2025-09-04 16:59:24 | INFO |    • issue_d
-2025-09-04 16:59:24 | INFO |    • ... y 4 más
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:10 | INFO |    • sub_grade
+2025-09-07 00:29:10 | INFO |    • emp_title
+2025-09-07 00:29:10 | INFO |    • issue_d
+2025-09-07 00:29:10 | INFO |    • ... y 4 más
+2025-09-07 00:29:10 | INFO | 
 📈 RESUMEN PARA PIPELINE:
-2025-09-04 16:59:24 | INFO |    ✅ Numéricas procesables: 81
-2025-09-04 16:59:24 | INFO |    ✅ Categóricas procesables: 7
-2025-09-04 16:59:24 | INFO |    ❌ Variables descartadas: 7
-2025-09-04 16:59:24 | WARNING | 
+2025-09-07 00:29:10 | INFO |    ✅ Numéricas procesables: 82
+2025-09-07 00:29:10 | INFO |    ✅ Categóricas procesables: 7
+2025-09-07 00:29:10 | INFO |    ❌ Variables descartadas: 7
+2025-09-07 00:29:10 | WARNING | 
 ⚠️  Variables descartadas por calidad:
-2025-09-04 16:59:24 | WARNING |    • sub_grade
-2025-09-04 16:59:24 | WARNING |    • emp_title
-2025-09-04 16:59:24 | WARNING |    • issue_d
-2025-09-04 16:59:24 | WARNING |    • pymnt_plan
-2025-09-04 16:59:24 | WARNING |    • title
-2025-09-04 16:59:24 | WARNING |    • ... y 2 más
-2025-09-04 16:59:24 | INFO | 
+2025-09-07 00:29:10 | WARNING |    • sub_grade
+2025-09-07 00:29:10 | WARNING |    • emp_title
+2025-09-07 00:29:10 | WARNING |    • issue_d
+2025-09-07 00:29:10 | WARNING |    • pymnt_plan
+2025-09-07 00:29:10 | WARNING |    • title
+2025-09-07 00:29:10 | WARNING |    • ... y 2 más
+2025-09-07 00:29:10 | INFO | 
 🎯 Variables categóricas seleccionadas:
-2025-09-04 16:59:24 | INFO |    • grade (7 valores únicos)
-2025-09-04 16:59:24 | INFO |    • emp_length (11 valores únicos)
-2025-09-04 16:59:24 | INFO |    • home_ownership (6 valores únicos)
-2025-09-04 16:59:24 | INFO |    • loan_status (4 valores únicos)
-2025-09-04 16:59:24 | INFO |    • purpose (14 valores únicos)
-2025-09-04 16:59:24 | INFO |    • ... y 2 más
-2025-09-04 16:59:24 | INFO | STEP 5 COMPLETED: Separate variables by type (INTELIGENTE) - Numéricas: 81, Categóricas: 7, Descartadas: 7
-2025-09-04 16:59:24 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:25 | INFO | \n🛡️ PROTECCIÓN DE INT_RATE
-2025-09-04 16:59:25 | INFO | ==================================================
-2025-09-04 16:59:25 | INFO | ✅ Variable protegida 'int_rate' encontrada
-2025-09-04 16:59:25 | INFO | Variables válidas para correlación: 81
-2025-09-04 16:59:42 | INFO | \n📊 Análisis de correlación con int_rate:
-2025-09-04 16:59:42 | INFO |   term: 0.421
-2025-09-04 16:59:42 | INFO |   fico_range_low: 0.416
-2025-09-04 16:59:42 | INFO |   fico_avg: 0.416
-2025-09-04 16:59:42 | INFO |   fico_range_high: 0.416
-2025-09-04 16:59:42 | INFO |   bc_open_to_buy: 0.278
-2025-09-04 16:59:42 | INFO |   bc_util: 0.259
-2025-09-04 16:59:42 | INFO |   all_util: 0.257
-2025-09-04 16:59:42 | INFO |   percent_bc_gt_75: 0.253
-2025-09-04 16:59:42 | INFO |   revol_util: 0.252
-2025-09-04 16:59:42 | INFO | \n🎯 VARIABLES CATEGÓRICAS RELACIONADAS CON int_rate:
-2025-09-04 16:59:42 | INFO |   ⚠️ grade: relacion_inherente_con_int_rate
-2025-09-04 16:59:42 | INFO | \n🎯 RESULTADO PROTECCIÓN INT_RATE:
-2025-09-04 16:59:42 | INFO |    ✅ int_rate PROTEGIDA Y MANTENIDA
-2025-09-04 16:59:42 | INFO |    ❌ Variables numéricas eliminadas por correlación: 0
-2025-09-04 16:59:42 | INFO |    📊 Variables numéricas finales: 81
-2025-09-04 16:59:42 | INFO |    📊 Variables categóricas finales: 7
-2025-09-04 16:59:43 | INFO | 
-2025-09-04 16:59:43 | INFO | STEP 6.5: Categorical variables selection
-2025-09-04 16:59:43 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:43 | INFO | Configuración selección categórica:
-2025-09-04 16:59:43 | INFO |   • IV threshold: 0.3 (MEDIA en adelante)
-2025-09-04 16:59:43 | INFO |   • Chi-square: ✅
-2025-09-04 16:59:43 | INFO |   • WOE/IV: ✅
-2025-09-04 16:59:47 | INFO | 
+2025-09-07 00:29:10 | INFO |    • grade (7 valores únicos)
+2025-09-07 00:29:10 | INFO |    • emp_length (11 valores únicos)
+2025-09-07 00:29:10 | INFO |    • home_ownership (6 valores únicos)
+2025-09-07 00:29:10 | INFO |    • loan_status (4 valores únicos)
+2025-09-07 00:29:10 | INFO |    • purpose (14 valores únicos)
+2025-09-07 00:29:10 | INFO |    • ... y 2 más
+2025-09-07 00:29:10 | INFO | STEP 5 COMPLETED: Separate variables by type (INTELIGENTE) - Numéricas: 82, Categóricas: 7, Descartadas: 7
+2025-09-07 00:29:10 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:10 | INFO | \n🛡️ PROTECCIÓN DE INT_RATE
+2025-09-07 00:29:10 | INFO | ==================================================
+2025-09-07 00:29:10 | INFO | ✅ Variable protegida 'int_rate' encontrada
+2025-09-07 00:29:10 | INFO | Variables válidas para correlación: 82
+2025-09-07 00:29:26 | INFO | \n📊 Análisis de correlación con int_rate:
+2025-09-07 00:29:26 | INFO |   term: 0.421
+2025-09-07 00:29:26 | INFO |   fico_range_low: 0.416
+2025-09-07 00:29:26 | INFO |   fico_avg: 0.416
+2025-09-07 00:29:26 | INFO |   fico_range_high: 0.416
+2025-09-07 00:29:26 | INFO |   bc_open_to_buy: 0.278
+2025-09-07 00:29:26 | INFO |   bc_util: 0.259
+2025-09-07 00:29:26 | INFO |   all_util: 0.257
+2025-09-07 00:29:26 | INFO |   percent_bc_gt_75: 0.253
+2025-09-07 00:29:26 | INFO |   revol_util: 0.252
+2025-09-07 00:29:26 | INFO | \n🎯 VARIABLES CATEGÓRICAS RELACIONADAS CON int_rate:
+2025-09-07 00:29:26 | INFO |   ⚠️ grade: relacion_inherente_con_int_rate
+2025-09-07 00:29:26 | INFO | \n🎯 RESULTADO PROTECCIÓN INT_RATE:
+2025-09-07 00:29:26 | INFO |    ✅ int_rate PROTEGIDA Y MANTENIDA
+2025-09-07 00:29:26 | INFO |    ❌ Variables numéricas eliminadas por correlación: 0
+2025-09-07 00:29:26 | INFO |    📊 Variables numéricas finales: 82
+2025-09-07 00:29:26 | INFO |    📊 Variables categóricas finales: 7
+2025-09-07 00:29:26 | INFO | 
+2025-09-07 00:29:26 | INFO | STEP 6.5: Categorical variables selection
+2025-09-07 00:29:26 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:26 | INFO | Configuración selección categórica:
+2025-09-07 00:29:26 | INFO |   • IV threshold: 0.1 (MEDIA en adelante)
+2025-09-07 00:29:26 | INFO |   • Chi-square: ✅
+2025-09-07 00:29:26 | INFO |   • WOE/IV: ✅
+2025-09-07 00:29:31 | INFO | 
 🔄 CONVERSIÓN A WOE
-2025-09-04 16:59:47 | INFO | ==================================================
-2025-09-04 16:59:47 | INFO | Convirtiendo 2 variables categóricas a WOE
-2025-09-04 16:59:48 | INFO |   ✅ grade → grade_woe
-2025-09-04 16:59:48 | INFO |      Valores WOE: 7 categorías
-2025-09-04 16:59:48 | INFO |      Rango WOE: [-1.292, 1.314]
-2025-09-04 16:59:48 | INFO |   ✅ debt_settlement_flag → debt_settlement_flag_woe
-2025-09-04 16:59:48 | INFO |      Valores WOE: 2 categorías
-2025-09-04 16:59:48 | INFO |      Rango WOE: [-0.125, 10.225]
-2025-09-04 16:59:48 | INFO | 
+2025-09-07 00:29:31 | INFO | ==================================================
+2025-09-07 00:29:31 | INFO | Convirtiendo 2 variables categóricas a WOE
+2025-09-07 00:29:32 | INFO |   ✅ grade → grade_woe
+2025-09-07 00:29:32 | INFO |      Valores WOE: 7 categorías
+2025-09-07 00:29:32 | INFO |      Rango WOE: [-1.292, 1.314]
+2025-09-07 00:29:32 | INFO |   ✅ debt_settlement_flag → debt_settlement_flag_woe
+2025-09-07 00:29:32 | INFO |      Valores WOE: 2 categorías
+2025-09-07 00:29:32 | INFO |      Rango WOE: [-0.125, 10.225]
+2025-09-07 00:29:32 | INFO | 
 🎯 RESULTADO CONVERSIÓN WOE:
-2025-09-04 16:59:48 | INFO |    ✅ Variables convertidas: 2
-2025-09-04 16:59:48 | INFO |    📊 Columnas WOE creadas: ['grade_woe', 'debt_settlement_flag_woe']
-2025-09-04 16:59:48 | INFO | 
+2025-09-07 00:29:32 | INFO |    ✅ Variables convertidas: 2
+2025-09-07 00:29:32 | INFO |    📊 Columnas WOE creadas: ['grade_woe', 'debt_settlement_flag_woe']
+2025-09-07 00:29:32 | INFO | 
 📊 RESULTADO SELECCIÓN CATEGÓRICA:
-2025-09-04 16:59:48 | INFO |    ✅ Variables iniciales: 7
-2025-09-04 16:59:48 | INFO |    ✅ Variables seleccionadas: 2
-2025-09-04 16:59:48 | INFO |    🔄 Variables convertidas a WOE: 2
-2025-09-04 16:59:48 | INFO |    ❌ Variables descartadas: 5
-2025-09-04 16:59:48 | INFO |    🏆 Variables WOE finales: ['grade_woe', 'debt_settlement_flag_woe']
-2025-09-04 16:59:48 | INFO | STEP 6.5 COMPLETED: Categorical variables selection - Selected: 2 WOE variables
-2025-09-04 16:59:48 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:48 | INFO | 
-2025-09-04 16:59:48 | INFO | STEP 6: Numeric summary and filtering
-2025-09-04 16:59:48 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:48 | INFO | 🛡️ Variable protegida 'int_rate' detectada - será preservada
-2025-09-04 16:59:48 | INFO | Starting with 81 numerical variables
-2025-09-04 16:59:54 | INFO | Initial numerical variables summary:
-2025-09-04 16:59:54 | INFO |   Total variables: 81
-2025-09-04 16:59:54 | INFO | Applying missing value filter (threshold: 50%)
-2025-09-04 16:59:54 | INFO | Variables con más de 50% de nulos: 19
-2025-09-04 16:59:54 | INFO | Calculando correlación con el target para posibles rescates...
-2025-09-04 16:59:55 | INFO | Variables rescatadas por correlación > 0.1: 0
-2025-09-04 16:59:55 | INFO | Empty DataFrame
+2025-09-07 00:29:32 | INFO |    ✅ Variables iniciales: 7
+2025-09-07 00:29:32 | INFO |    ✅ Variables seleccionadas: 2
+2025-09-07 00:29:32 | INFO |    🔄 Variables convertidas a WOE: 2
+2025-09-07 00:29:32 | INFO |    ❌ Variables descartadas: 5
+2025-09-07 00:29:32 | INFO |    🏆 Variables WOE finales: ['grade_woe', 'debt_settlement_flag_woe']
+2025-09-07 00:29:32 | INFO | STEP 6.5 COMPLETED: Categorical variables selection - Selected: 2 WOE variables
+2025-09-07 00:29:32 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:32 | INFO | 
+2025-09-07 00:29:32 | INFO | STEP 6: Numeric summary and filtering
+2025-09-07 00:29:32 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:32 | INFO | 🛡️ Variable protegida 'int_rate' detectada - será preservada
+2025-09-07 00:29:32 | INFO | Starting with 82 numerical variables
+2025-09-07 00:29:37 | INFO | Initial numerical variables summary:
+2025-09-07 00:29:37 | INFO |   Total variables: 82
+2025-09-07 00:29:37 | INFO | Applying missing value filter (threshold: 60%)
+2025-09-07 00:29:37 | INFO | Variables con más de 60% de nulos: 4
+2025-09-07 00:29:37 | INFO | Calculando correlación con el target para posibles rescates...
+2025-09-07 00:29:37 | INFO | Variables rescatadas por correlación > 0.1: 0
+2025-09-07 00:29:37 | INFO | Empty DataFrame
 Columns: [correlacion_con_target]
 Index: []
-2025-09-04 16:59:55 | INFO | Variables numéricas tras filtrar nulos y rescatar: 62
-2025-09-04 16:59:55 | INFO | After missing value filter: 62 variables
-2025-09-04 16:59:55 | INFO | Applying coefficient of variation filter (threshold: 0.1)
-2025-09-04 16:59:55 | INFO | After CV filter: 61 variables
-2025-09-04 16:59:55 | INFO | ✅ Variable protegida 'int_rate' mantenida en selección
-2025-09-04 16:59:55 | INFO | Final selected numerical variables: ['loan_amnt', 'funded_amnt', 'funded_amnt_inv', 'term', 'int_rate', 'installment', 'annual_inc', 'dti', 'delinq_2yrs', 'fico_range_low', 'fico_range_high', 'inq_last_6mths', 'open_acc', 'pub_rec', 'revol_bal', 'revol_util', 'total_acc', 'collections_12_mths_ex_med', 'acc_now_delinq', 'tot_coll_amt', 'tot_cur_bal', 'total_rev_hi_lim', 'acc_open_past_24mths', 'avg_cur_bal', 'bc_open_to_buy', 'bc_util', 'chargeoff_within_12_mths', 'delinq_amnt', 'mo_sin_old_il_acct', 'mo_sin_old_rev_tl_op', 'mo_sin_rcnt_rev_tl_op', 'mo_sin_rcnt_tl', 'mort_acc', 'mths_since_recent_bc', 'mths_since_recent_inq', 'num_accts_ever_120_pd', 'num_actv_bc_tl', 'num_actv_rev_tl', 'num_bc_sats', 'num_bc_tl', 'num_il_tl', 'num_op_rev_tl', 'num_rev_accts', 'num_rev_tl_bal_gt_0', 'num_sats', 'num_tl_120dpd_2m', 'num_tl_30dpd', 'num_tl_90g_dpd_24m', 'num_tl_op_past_12m', 'percent_bc_gt_75', 'pub_rec_bankruptcies', 'tax_liens', 'tot_hi_cred_lim', 'total_bal_ex_mort', 'total_bc_limit', 'total_il_high_credit_limit', 'emp_length_months', 'ratio_loan_income', 'installment_pct_loan', 'fico_avg', 'revol_util_ratio']
-2025-09-04 16:59:55 | INFO | STEP 6 COMPLETED: Numeric summary and filtering - Selected: 61
-2025-09-04 16:59:55 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:55 | INFO | 
-2025-09-04 16:59:55 | INFO | STEP 7: PCA diagnostics and LDA importance
-2025-09-04 16:59:55 | INFO | ------------------------------------------------------------
-2025-09-04 16:59:55 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis PCA+LDA
-2025-09-04 17:00:04 | INFO | 🔧 Modo PCA: Porcentaje de varianza (95.0%)
-2025-09-04 17:00:04 | INFO |    📊 Componentes calculados: 35
-2025-09-04 17:00:04 | INFO |    📈 Varianza real explicada: 95.25%
-2025-09-04 17:00:04 | INFO | Running PCA with 35 components, plot_variance: False
-2025-09-04 17:00:13 | INFO | PCA completed successfully
-2025-09-04 17:00:13 | INFO | Running LDA importance selection (threshold: 0.05)
-2025-09-04 17:00:28 | INFO | LDA importance selection completed. Selected variables: ['debt_settlement_flag_woe', 'grade_woe', 'int_rate', 'term', 'dti', 'num_tl_op_past_12m', 'mort_acc', 'acc_open_past_24mths', 'installment_pct_loan', 'total_acc', 'num_bc_tl', 'mths_since_recent_inq', 'num_rev_accts']
-2025-09-04 17:00:28 | INFO | STEP 7 COMPLETED: PCA diagnostics and LDA importance - Selected: 13
-2025-09-04 17:00:28 | INFO | ------------------------------------------------------------
-2025-09-04 17:00:28 | INFO | 
-2025-09-04 17:00:28 | INFO | STEP 8: ANOVA F-test selection
-2025-09-04 17:00:28 | INFO | ------------------------------------------------------------
-2025-09-04 17:00:28 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis ANOVA
-2025-09-04 17:00:28 | INFO | ANOVA parameters: min_f_score=None, max_p_value=0.05, top_n=None
-2025-09-04 17:00:38 | INFO | ANOVA selection completed. Selected variables: ['debt_settlement_flag_woe', 'grade_woe', 'int_rate', 'term', 'fico_range_low', 'fico_avg', 'fico_range_high', 'acc_open_past_24mths', 'dti', 'num_tl_op_past_12m', 'mort_acc', 'funded_amnt_inv', 'funded_amnt', 'loan_amnt', 'num_actv_rev_tl', 'avg_cur_bal', 'bc_open_to_buy', 'num_rev_tl_bal_gt_0', 'tot_hi_cred_lim', 'tot_cur_bal', 'total_bc_limit', 'installment_pct_loan', 'installment', 'percent_bc_gt_75', 'bc_util', 'revol_util', 'mo_sin_rcnt_tl', 'mths_since_recent_inq', 'num_actv_bc_tl', 'revol_util_ratio', 'mo_sin_rcnt_rev_tl_op', 'mths_since_recent_bc', 'total_rev_hi_lim', 'mo_sin_old_rev_tl_op', 'inq_last_6mths', 'num_op_rev_tl', 'annual_inc', 'open_acc', 'pub_rec', 'num_sats', 'pub_rec_bankruptcies', 'mo_sin_old_il_acct', 'delinq_2yrs', 'num_bc_tl', 'num_accts_ever_120_pd', 'collections_12_mths_ex_med', 'num_bc_sats', 'revol_bal', 'emp_length_months', 'num_tl_90g_dpd_24m', 'tax_liens', 'total_acc', 'total_il_high_credit_limit', 'num_il_tl', 'total_bal_ex_mort', 'num_rev_accts', 'chargeoff_within_12_mths', 'acc_now_delinq', 'num_tl_30dpd', 'delinq_amnt', 'ratio_loan_income']
-2025-09-04 17:00:38 | INFO | STEP 8 COMPLETED: ANOVA F-test selection - Selected: 61
-2025-09-04 17:00:38 | INFO | ------------------------------------------------------------
-2025-09-04 17:00:38 | INFO | 
-2025-09-04 17:00:38 | INFO | STEP 9: Correlation redundancy removal - PCA+LDA
-2025-09-04 17:00:38 | INFO | ------------------------------------------------------------
-2025-09-04 17:00:38 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis de correlación PCA+LDA
-2025-09-04 17:00:38 | INFO | Correlation threshold: 0.6, plot_heatmap: False
-2025-09-04 17:00:38 | INFO | Starting with 13 variables for PCA+LDA
-2025-09-04 17:00:41 | INFO | 🛡️ Variable protegida 'int_rate' FORZADA en resultados de correlación PCA+LDA
-2025-09-04 17:00:41 | INFO | Removed 4 redundant variables
-2025-09-04 17:00:41 | INFO | Remaining variables: ['grade_woe', 'term', 'acc_open_past_24mths', 'total_acc', 'mths_since_recent_inq', 'mort_acc', 'dti', 'debt_settlement_flag_woe', 'int_rate']
-2025-09-04 17:00:41 | INFO | STEP 9 COMPLETED: Correlation redundancy removal - PCA+LDA - Remaining: 9
-2025-09-04 17:00:41 | INFO | ------------------------------------------------------------
-2025-09-04 17:00:41 | INFO | 
-2025-09-04 17:00:41 | INFO | STEP 9: Correlation redundancy removal - ANOVA
-2025-09-04 17:00:41 | INFO | ------------------------------------------------------------
-2025-09-04 17:00:41 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis de correlación ANOVA
-2025-09-04 17:00:41 | INFO | Correlation threshold: 0.6, plot_heatmap: False
-2025-09-04 17:00:41 | INFO | Starting with 61 variables for ANOVA
-2025-09-04 17:01:18 | INFO | 🛡️ Variable protegida 'int_rate' FORZADA en resultados de correlación ANOVA
-2025-09-04 17:01:18 | INFO | Removed 32 redundant variables
-2025-09-04 17:01:18 | INFO | Remaining variables: ['grade_woe', 'term', 'fico_range_low', 'num_tl_op_past_12m', 'funded_amnt_inv', 'num_sats', 'avg_cur_bal', 'bc_open_to_buy', 'revol_util', 'mths_since_recent_bc', 'pub_rec_bankruptcies', 'num_tl_90g_dpd_24m', 'total_bal_ex_mort', 'num_tl_30dpd', 'mths_since_recent_inq', 'ratio_loan_income', 'inq_last_6mths', 'chargeoff_within_12_mths', 'delinq_amnt', 'dti', 'debt_settlement_flag_woe', 'mo_sin_old_rev_tl_op', 'emp_length_months', 'collections_12_mths_ex_med', 'mort_acc', 'mo_sin_old_il_acct', 'annual_inc', 'num_accts_ever_120_pd', 'int_rate']
-2025-09-04 17:01:18 | INFO | STEP 9 COMPLETED: Correlation redundancy removal - ANOVA - Remaining: 29
-2025-09-04 17:01:18 | INFO | ------------------------------------------------------------
-2025-09-04 17:01:18 | INFO | 
-2025-09-04 17:01:18 | INFO | STEP 10: Save outputs
-2025-09-04 17:01:18 | INFO | ------------------------------------------------------------
-2025-09-04 17:01:18 | INFO | Output directory ensured: .
-2025-09-04 17:01:43 | INFO | PCA+LDA dataset saved: .\df_pca_lda.csv
-2025-09-04 17:01:43 | INFO |   Shape: (992420, 10)
-2025-09-04 17:01:43 | INFO |   Variables: ['grade_woe', 'term', 'acc_open_past_24mths', 'total_acc', 'mths_since_recent_inq', 'mort_acc', 'dti', 'debt_settlement_flag_woe', 'int_rate']
-2025-09-04 17:01:43 | INFO |   Target: flg_target
-2025-09-04 17:01:43 | INFO |   ✅ int_rate INCLUIDA en dataset final
-2025-09-04 17:02:54 | INFO | ANOVA dataset saved: .\df_anova.csv
-2025-09-04 17:02:54 | INFO |   Shape: (992420, 30)
-2025-09-04 17:02:54 | INFO |   Variables: ['grade_woe', 'term', 'fico_range_low', 'num_tl_op_past_12m', 'funded_amnt_inv', 'num_sats', 'avg_cur_bal', 'bc_open_to_buy', 'revol_util', 'mths_since_recent_bc', 'pub_rec_bankruptcies', 'num_tl_90g_dpd_24m', 'total_bal_ex_mort', 'num_tl_30dpd', 'mths_since_recent_inq', 'ratio_loan_income', 'inq_last_6mths', 'chargeoff_within_12_mths', 'delinq_amnt', 'dti', 'debt_settlement_flag_woe', 'mo_sin_old_rev_tl_op', 'emp_length_months', 'collections_12_mths_ex_med', 'mort_acc', 'mo_sin_old_il_acct', 'annual_inc', 'num_accts_ever_120_pd', 'int_rate']
-2025-09-04 17:02:54 | INFO |   Target: flg_target
-2025-09-04 17:02:54 | INFO |   ✅ int_rate INCLUIDA en dataset final
-2025-09-04 17:02:54 | INFO | STEP 10 COMPLETED: Save outputs - Files saved: 2
-2025-09-04 17:02:54 | INFO | ------------------------------------------------------------
-2025-09-04 17:02:54 | INFO | 
+2025-09-07 00:29:37 | INFO | Variables numéricas tras filtrar nulos y rescatar: 78
+2025-09-07 00:29:37 | INFO | After missing value filter: 78 variables
+2025-09-07 00:29:37 | INFO | Applying coefficient of variation filter (threshold: 0.08)
+2025-09-07 00:29:37 | INFO | After CV filter: 78 variables
+2025-09-07 00:29:37 | INFO | ✅ Variable protegida 'int_rate' mantenida en selección
+2025-09-07 00:29:37 | INFO | Final selected numerical variables: ['loan_amnt', 'funded_amnt', 'funded_amnt_inv', 'term', 'int_rate', 'installment', 'annual_inc', 'dti', 'delinq_2yrs', 'fico_range_low', 'fico_range_high', 'inq_last_6mths', 'mths_since_last_delinq', 'open_acc', 'pub_rec', 'revol_bal', 'revol_util', 'total_acc', 'collections_12_mths_ex_med', 'acc_now_delinq', 'tot_coll_amt', 'tot_cur_bal', 'open_acc_6m', 'open_act_il', 'open_il_12m', 'open_il_24m', 'mths_since_rcnt_il', 'total_bal_il', 'il_util', 'open_rv_12m', 'open_rv_24m', 'max_bal_bc', 'all_util', 'total_rev_hi_lim', 'inq_fi', 'total_cu_tl', 'inq_last_12m', 'acc_open_past_24mths', 'avg_cur_bal', 'bc_open_to_buy', 'bc_util', 'chargeoff_within_12_mths', 'delinq_amnt', 'mo_sin_old_il_acct', 'mo_sin_old_rev_tl_op', 'mo_sin_rcnt_rev_tl_op', 'mo_sin_rcnt_tl', 'mort_acc', 'mths_since_recent_bc', 'mths_since_recent_inq', 'num_accts_ever_120_pd', 'num_actv_bc_tl', 'num_actv_rev_tl', 'num_bc_sats', 'num_bc_tl', 'num_il_tl', 'num_op_rev_tl', 'num_rev_accts', 'num_rev_tl_bal_gt_0', 'num_sats', 'num_tl_120dpd_2m', 'num_tl_30dpd', 'num_tl_90g_dpd_24m', 'num_tl_op_past_12m', 'pct_tl_nvr_dlq', 'percent_bc_gt_75', 'pub_rec_bankruptcies', 'tax_liens', 'tot_hi_cred_lim', 'total_bal_ex_mort', 'total_bc_limit', 'total_il_high_credit_limit', 'emp_length_months', 'ratio_loan_income', 'installment_pct_loan', 'fico_avg', 'revol_util_ratio', 'installment_income_ratio']
+2025-09-07 00:29:37 | INFO | STEP 6 COMPLETED: Numeric summary and filtering - Selected: 78
+2025-09-07 00:29:37 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:38 | INFO | 
+2025-09-07 00:29:38 | INFO | STEP 7: PCA diagnostics and LDA importance
+2025-09-07 00:29:38 | INFO | ------------------------------------------------------------
+2025-09-07 00:29:38 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis PCA+LDA
+2025-09-07 00:29:47 | INFO | 🔧 Modo PCA: Porcentaje de varianza (97.5%)
+2025-09-07 00:29:47 | INFO |    📊 Componentes calculados: 52
+2025-09-07 00:29:47 | INFO |    📈 Varianza real explicada: 97.55%
+2025-09-07 00:29:47 | INFO | Running PCA with 52 components, plot_variance: False
+2025-09-07 00:29:57 | INFO | PCA completed successfully
+2025-09-07 00:29:57 | INFO | Running LDA importance selection (threshold: 0.03)
+2025-09-07 00:30:11 | INFO | LDA importance selection completed. Selected variables: ['debt_settlement_flag_woe', 'grade_woe', 'int_rate', 'term', 'dti', 'num_tl_op_past_12m', 'mort_acc', 'acc_open_past_24mths', 'installment_pct_loan', 'all_util', 'mo_sin_rcnt_rev_tl_op', 'num_bc_tl', 'total_acc', 'num_rev_accts', 'mths_since_recent_inq', 'open_acc_6m', 'funded_amnt_inv', 'loan_amnt', 'funded_amnt', 'mths_since_recent_bc', 'open_act_il', 'num_rev_tl_bal_gt_0', 'fico_range_low', 'fico_avg', 'fico_range_high', 'num_actv_rev_tl', 'revol_util_ratio', 'revol_util', 'tot_cur_bal', 'tot_hi_cred_lim', 'mths_since_rcnt_il', 'collections_12_mths_ex_med', 'emp_length_months', 'avg_cur_bal', 'pct_tl_nvr_dlq', 'max_bal_bc', 'total_bal_il', 'annual_inc', 'num_actv_bc_tl', 'open_il_12m', 'mo_sin_rcnt_tl']
+2025-09-07 00:30:11 | INFO | STEP 7 COMPLETED: PCA diagnostics and LDA importance - Selected: 41
+2025-09-07 00:30:11 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:11 | INFO | 
+2025-09-07 00:30:11 | INFO | STEP 8: ANOVA F-test selection
+2025-09-07 00:30:11 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:11 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis ANOVA
+2025-09-07 00:30:11 | INFO | ANOVA parameters: min_f_score=None, max_p_value=0.05, top_n=None
+2025-09-07 00:30:15 | INFO | ANOVA selection completed. Selected variables: ['debt_settlement_flag_woe', 'grade_woe', 'int_rate', 'term', 'fico_range_low', 'fico_avg', 'fico_range_high', 'acc_open_past_24mths', 'dti', 'num_tl_op_past_12m', 'mort_acc', 'funded_amnt_inv', 'funded_amnt', 'loan_amnt', 'num_actv_rev_tl', 'avg_cur_bal', 'bc_open_to_buy', 'num_rev_tl_bal_gt_0', 'tot_hi_cred_lim', 'tot_cur_bal', 'total_bc_limit', 'installment_pct_loan', 'installment', 'percent_bc_gt_75', 'bc_util', 'open_rv_24m', 'all_util', 'revol_util', 'mo_sin_rcnt_tl', 'mths_since_recent_inq', 'num_actv_bc_tl', 'revol_util_ratio', 'mo_sin_rcnt_rev_tl_op', 'mths_since_recent_bc', 'total_rev_hi_lim', 'mo_sin_old_rev_tl_op', 'inq_last_6mths', 'open_rv_12m', 'num_op_rev_tl', 'inq_last_12m', 'annual_inc', 'open_acc_6m', 'open_acc', 'pub_rec', 'num_sats', 'pub_rec_bankruptcies', 'pct_tl_nvr_dlq', 'inq_fi', 'mo_sin_old_il_acct', 'delinq_2yrs', 'open_il_24m', 'max_bal_bc', 'il_util', 'num_bc_tl', 'num_accts_ever_120_pd', 'open_il_12m', 'collections_12_mths_ex_med', 'num_bc_sats', 'revol_bal', 'emp_length_months', 'num_tl_90g_dpd_24m', 'tax_liens', 'total_acc', 'total_il_high_credit_limit', 'num_il_tl', 'mths_since_rcnt_il', 'total_bal_ex_mort', 'mths_since_last_delinq', 'open_act_il', 'num_rev_accts', 'chargeoff_within_12_mths', 'acc_now_delinq', 'num_tl_30dpd', 'total_cu_tl', 'delinq_amnt', 'ratio_loan_income', 'installment_income_ratio']
+2025-09-07 00:30:15 | INFO | STEP 8 COMPLETED: ANOVA F-test selection - Selected: 77
+2025-09-07 00:30:15 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:15 | INFO | 
+2025-09-07 00:30:15 | INFO | STEP 9: Correlation redundancy removal - PCA+LDA
+2025-09-07 00:30:15 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:15 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis de correlación PCA+LDA
+2025-09-07 00:30:15 | INFO | Correlation threshold: 0.8, plot_heatmap: False
+2025-09-07 00:30:15 | INFO | Starting with 41 variables for PCA+LDA
+2025-09-07 00:30:20 | INFO | 🛡️ Variable protegida 'int_rate' FORZADA en resultados de correlación PCA+LDA
+2025-09-07 00:30:20 | INFO | Removed 11 redundant variables
+2025-09-07 00:30:20 | INFO | Remaining variables: ['grade_woe', 'term', 'num_rev_accts', 'funded_amnt_inv', 'num_actv_rev_tl', 'fico_range_low', 'revol_util', 'tot_cur_bal', 'debt_settlement_flag_woe', 'all_util', 'dti', 'emp_length_months', 'mo_sin_rcnt_rev_tl_op', 'num_tl_op_past_12m', 'mths_since_recent_inq', 'acc_open_past_24mths', 'mths_since_recent_bc', 'total_acc', 'collections_12_mths_ex_med', 'open_il_12m', 'open_acc_6m', 'total_bal_il', 'mths_since_rcnt_il', 'mo_sin_rcnt_tl', 'annual_inc', 'mort_acc', 'pct_tl_nvr_dlq', 'open_act_il', 'max_bal_bc', 'int_rate']
+2025-09-07 00:30:20 | INFO | STEP 9 COMPLETED: Correlation redundancy removal - PCA+LDA - Remaining: 30
+2025-09-07 00:30:20 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:20 | INFO | 
+2025-09-07 00:30:20 | INFO | STEP 9: Correlation redundancy removal - ANOVA
+2025-09-07 00:30:20 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:20 | INFO | 🛡️ Variable protegida 'int_rate' incluida en análisis de correlación ANOVA
+2025-09-07 00:30:20 | INFO | Correlation threshold: 0.8, plot_heatmap: False
+2025-09-07 00:30:20 | INFO | Starting with 77 variables for ANOVA
+2025-09-07 00:30:33 | INFO | 🛡️ Variable protegida 'int_rate' FORZADA en resultados de correlación ANOVA
+2025-09-07 00:30:33 | INFO | Removed 23 redundant variables
+2025-09-07 00:30:33 | INFO | Remaining variables: ['grade_woe', 'term', 'fico_range_low', 'open_rv_24m', 'num_tl_op_past_12m', 'funded_amnt_inv', 'num_actv_rev_tl', 'tot_cur_bal', 'total_bc_limit', 'revol_util', 'revol_bal', 'num_op_rev_tl', 'num_rev_accts', 'total_bal_ex_mort', 'ratio_loan_income', 'acc_now_delinq', 'total_cu_tl', 'inq_last_6mths', 'delinq_2yrs', 'debt_settlement_flag_woe', 'all_util', 'tax_liens', 'dti', 'num_tl_30dpd', 'emp_length_months', 'inq_last_12m', 'mo_sin_rcnt_rev_tl_op', 'chargeoff_within_12_mths', 'mths_since_recent_inq', 'mths_since_recent_bc', 'mths_since_last_delinq', 'total_acc', 'pub_rec_bankruptcies', 'open_il_24m', 'inq_fi', 'num_tl_90g_dpd_24m', 'delinq_amnt', 'collections_12_mths_ex_med', 'il_util', 'num_accts_ever_120_pd', 'open_il_12m', 'open_acc_6m', 'pub_rec', 'mths_since_rcnt_il', 'mo_sin_rcnt_tl', 'annual_inc', 'mort_acc', 'pct_tl_nvr_dlq', 'open_act_il', 'num_il_tl', 'mo_sin_old_il_acct', 'max_bal_bc', 'mo_sin_old_rev_tl_op', 'int_rate']
+2025-09-07 00:30:33 | INFO | STEP 9 COMPLETED: Correlation redundancy removal - ANOVA - Remaining: 54
+2025-09-07 00:30:33 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:33 | INFO | 
+2025-09-07 00:30:33 | INFO | STEP 10: Save outputs
+2025-09-07 00:30:33 | INFO | ------------------------------------------------------------
+2025-09-07 00:30:33 | INFO | Output directory ensured: .
+2025-09-07 00:30:52 | INFO | PCA+LDA dataset saved: .\df_pca_lda.csv
+2025-09-07 00:30:52 | INFO |   Shape: (992420, 31)
+2025-09-07 00:30:52 | INFO |   Variables: ['grade_woe', 'term', 'num_rev_accts', 'funded_amnt_inv', 'num_actv_rev_tl', 'fico_range_low', 'revol_util', 'tot_cur_bal', 'debt_settlement_flag_woe', 'all_util', 'dti', 'emp_length_months', 'mo_sin_rcnt_rev_tl_op', 'num_tl_op_past_12m', 'mths_since_recent_inq', 'acc_open_past_24mths', 'mths_since_recent_bc', 'total_acc', 'collections_12_mths_ex_med', 'open_il_12m', 'open_acc_6m', 'total_bal_il', 'mths_since_rcnt_il', 'mo_sin_rcnt_tl', 'annual_inc', 'mort_acc', 'pct_tl_nvr_dlq', 'open_act_il', 'max_bal_bc', 'int_rate']
+2025-09-07 00:30:52 | INFO |   Target: flg_target
+2025-09-07 00:30:52 | INFO |   ✅ int_rate INCLUIDA en dataset final
+2025-09-07 00:31:20 | INFO | ANOVA dataset saved: .\df_anova.csv
+2025-09-07 00:31:20 | INFO |   Shape: (992420, 55)
+2025-09-07 00:31:20 | INFO |   Variables: ['grade_woe', 'term', 'fico_range_low', 'open_rv_24m', 'num_tl_op_past_12m', 'funded_amnt_inv', 'num_actv_rev_tl', 'tot_cur_bal', 'total_bc_limit', 'revol_util', 'revol_bal', 'num_op_rev_tl', 'num_rev_accts', 'total_bal_ex_mort', 'ratio_loan_income', 'acc_now_delinq', 'total_cu_tl', 'inq_last_6mths', 'delinq_2yrs', 'debt_settlement_flag_woe', 'all_util', 'tax_liens', 'dti', 'num_tl_30dpd', 'emp_length_months', 'inq_last_12m', 'mo_sin_rcnt_rev_tl_op', 'chargeoff_within_12_mths', 'mths_since_recent_inq', 'mths_since_recent_bc', 'mths_since_last_delinq', 'total_acc', 'pub_rec_bankruptcies', 'open_il_24m', 'inq_fi', 'num_tl_90g_dpd_24m', 'delinq_amnt', 'collections_12_mths_ex_med', 'il_util', 'num_accts_ever_120_pd', 'open_il_12m', 'open_acc_6m', 'pub_rec', 'mths_since_rcnt_il', 'mo_sin_rcnt_tl', 'annual_inc', 'mort_acc', 'pct_tl_nvr_dlq', 'open_act_il', 'num_il_tl', 'mo_sin_old_il_acct', 'max_bal_bc', 'mo_sin_old_rev_tl_op', 'int_rate']
+2025-09-07 00:31:20 | INFO |   Target: flg_target
+2025-09-07 00:31:20 | INFO |   ✅ int_rate INCLUIDA en dataset final
+2025-09-07 00:31:20 | INFO | STEP 10 COMPLETED: Save outputs - Files saved: 2
+2025-09-07 00:31:20 | INFO | ------------------------------------------------------------
+2025-09-07 00:31:20 | INFO | 
 🎯 RESUMEN FINAL:
-2025-09-04 17:02:54 | INFO |    📊 Dataset: 992,420 filas × 98 columnas
-2025-09-04 17:02:54 | INFO |    ⏱️  Tiempo: 0:04:32.796437
-2025-09-04 17:02:54 | INFO |    ✅ Variables PCA+LDA: 9
-2025-09-04 17:02:54 | INFO |    ✅ Variables ANOVA: 29
-2025-09-04 17:02:54 | INFO |    🛡️  int_rate PROTEGIDO: ✅
-2025-09-04 17:02:54 | INFO |    📁 Archivos guardados: df_pca_lda.csv, df_anova.csv
-2025-09-04 17:02:54 | INFO |    📋 Log detallado: log_EDA.txt
-2025-09-04 17:02:54 | INFO | 
-2025-09-04 17:02:54 | INFO | ================================================================================
-2025-09-04 17:02:54 | INFO | EDA PIPELINE COMPLETED SUCCESSFULLY
-2025-09-04 17:02:54 | INFO | ================================================================================
-2025-09-04 17:02:54 | INFO | Total execution time: 0:04:32.796437
-2025-09-04 17:02:54 | INFO | Final dataset shape: (992420, 98)
-2025-09-04 17:02:54 | INFO | Variables numéricas PCA+LDA: 9
-2025-09-04 17:02:54 | INFO | Variables numéricas ANOVA: 29
-2025-09-04 17:02:54 | INFO | Variables categóricas WOE: 2
-2025-09-04 17:02:54 | INFO | TOTAL PCA+LDA (Num + Cat): 9
-2025-09-04 17:02:54 | INFO | TOTAL ANOVA (Num + Cat): 29
-2025-09-04 17:02:54 | INFO | ================================================================================
+2025-09-07 00:31:20 | INFO |    📊 Dataset: 992,420 filas × 99 columnas
+2025-09-07 00:31:20 | INFO |    ⏱️  Tiempo: 0:03:02.636215
+2025-09-07 00:31:20 | INFO |    ✅ Variables PCA+LDA: 30
+2025-09-07 00:31:20 | INFO |    ✅ Variables ANOVA: 54
+2025-09-07 00:31:20 | INFO |    🛡️  int_rate PROTEGIDO: ✅
+2025-09-07 00:31:20 | INFO |    📁 Archivos guardados: df_pca_lda.csv, df_anova.csv
+2025-09-07 00:31:20 | INFO |    📋 Log detallado: log_EDA.txt
+2025-09-07 00:31:20 | INFO | 
+2025-09-07 00:31:20 | INFO | ================================================================================
+2025-09-07 00:31:20 | INFO | EDA PIPELINE COMPLETED SUCCESSFULLY
+2025-09-07 00:31:20 | INFO | ================================================================================
+2025-09-07 00:31:20 | INFO | Total execution time: 0:03:02.636215
+2025-09-07 00:31:20 | INFO | Final dataset shape: (992420, 99)
+2025-09-07 00:31:20 | INFO | Variables numéricas PCA+LDA: 30
+2025-09-07 00:31:20 | INFO | Variables numéricas ANOVA: 54
+2025-09-07 00:31:20 | INFO | Variables categóricas WOE: 2
+2025-09-07 00:31:20 | INFO | TOTAL PCA+LDA (Num + Cat): 30
+2025-09-07 00:31:20 | INFO | TOTAL ANOVA (Num + Cat): 54
+2025-09-07 00:31:20 | INFO | ================================================================================

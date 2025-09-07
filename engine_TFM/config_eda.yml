@@ -59,17 +59,18 @@ features:
     enable_installment_pct_loan: true
     enable_fico_avg: true
     enable_revol_util_ratio: true
+    enable_installment_income_ratio: true
 
 selection:
   filter_missing:
     enable: true
-    threshold: 0.5
+    threshold: 0.6
     rescue_by_correlation: true
     min_corr: 0.1
     min_samples: 30
   filter_cv:
     enable: true
-    threshold: 0.1
+    threshold: 0.08
     rescue_by_correlation: true
     min_corr: 0.1
     min_samples: 30
@@ -80,11 +81,11 @@ selection:
     # - "variance_percentage": Calcula automáticamente el número de componentes que explican el porcentaje especificado
     mode: "variance_percentage"  # Opciones: "fixed_components" o "variance_percentage"
     n_components: 35             # Solo se usa si mode="fixed_components"
-    variance_threshold: 0.95     # Solo se usa si mode="variance_percentage" (95% de varianza)
+    variance_threshold: 0.975     # Solo se usa si mode="variance_percentage" (95% de varianza)
     plot_variance: false
   lda_importance:
     enable: true
-    importance_threshold: 0.05
+    importance_threshold: 0.03
     plot_importance: false
   anova:
     enable: true
@@ -93,7 +94,7 @@ selection:
     top_n: null
   correlation_redundancy:
     enable: true
-    threshold: 0.6
+    threshold: 0.8
     plot_heatmap: false
 
 # Configuración para separación inteligente de variables
@@ -107,14 +108,14 @@ separation:
 categorical_selection:
   enable_chi_square: true             # Habilitar test Chi-square
   enable_woe_iv: true                 # Habilitar cálculo WOE/IV
-  iv_threshold: 0.3                  # Umbral mínimo de Information Value (MEDIA en adelante)
+  iv_threshold: 0.1                  # Umbral mínimo de Information Value (MEDIA en adelante)
   chi_square_threshold: 0.05         # Umbral p-value para Chi-square
 
 # Configuración para protección de int_rate
 int_rate_protection:
-  enable_protection: true             # Habilitar protección de int_rate
+  enable_protection: true            # Habilitar protección de int_rate
   protected_variable: "int_rate"     # Variable a proteger
-  correlation_threshold: 0.7         # Umbral de correlación alta con int_rate
+  correlation_threshold: 0.8         # Umbral de correlación alta con int_rate
   priority_over_correlated: true     # Priorizar int_rate sobre variables correlacionadas
   force_include_int_rate: true       # Forzar inclusión de int_rate en resultados finales
 

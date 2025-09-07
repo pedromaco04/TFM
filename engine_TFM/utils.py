@@ -792,6 +792,12 @@ def derive_features(df: pd.DataFrame, toggles: dict, verbose: bool = True) -> pd
         if verbose:
             # Información detallada solo en log (manejo desde TFM_EDA.py)
             pass
+    if toggles.get('enable_installment_income_ratio', True) and all(c in df.columns for c in ['installment', 'annual_inc']):
+        # Convertir ingreso anual a mensual para comparar con cuota mensual
+        df['installment_income_ratio'] = df['installment'] / ((df['annual_inc'].astype(float) / 12.0) + 1e-5)
+        if verbose:
+            # Información detallada solo en log (manejo desde TFM_EDA.py)
+            pass
     return df
 
 

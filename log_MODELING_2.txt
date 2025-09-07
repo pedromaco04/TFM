@@ -1,0 +1,131 @@
+2025-09-06 18:12:34 | INFO | ================================================================================
+2025-09-06 18:12:34 | INFO | MODELING PIPELINE STARTED
+2025-09-06 18:12:34 | INFO | ================================================================================
+2025-09-06 18:12:34 | INFO | Configuration file: engine_TFM/config_modeling.yml
+2025-09-06 18:12:34 | INFO | Timestamp: 2025-09-06 18:12:34
+2025-09-06 18:12:34 | INFO | Log file: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\log_MODELING.txt
+2025-09-06 18:12:34 | INFO | ================================================================================
+2025-09-06 18:12:34 | INFO | Leyendo archivos de datos:
+2025-09-06 18:12:34 | INFO |   • PCA+LDA: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\df_pca_lda.csv
+2025-09-06 18:12:34 | INFO |   • ANOVA: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\df_anova.csv
+2025-09-06 18:12:39 | INFO | Datos cargados: PCA+LDA (992420, 31) | ANOVA (992420, 55)
+2025-09-06 18:12:39 | INFO | [TIMER] Carga de datos: 5.39s
+2025-09-06 18:12:40 | INFO | DETECCIÓN AUTOMÁTICA DE VARIABLES WOE:
+2025-09-06 18:12:40 | INFO |   PCA+LDA: 2 variables WOE encontradas: ['grade_woe', 'debt_settlement_flag_woe']
+2025-09-06 18:12:40 | INFO |   ANOVA: 2 variables WOE encontradas: ['grade_woe', 'debt_settlement_flag_woe']
+2025-09-06 18:12:40 | INFO |   Variables categóricas originales PCA+LDA: 0
+2025-09-06 18:12:40 | INFO |   Variables categóricas originales ANOVA: 0
+2025-09-06 18:12:40 | INFO | ✅ Variables WOE detectadas del EDA - usando directamente
+2025-09-06 18:12:40 | INFO | [TIMER] Preparación WOE: 0.19s
+2025-09-06 18:12:44 | INFO | [fit_logit_predict] Iniciando entrenamiento Logit...
+2025-09-06 18:12:44 | INFO | [fit_logit_predict] Tamaños -> X_train: (694694, 30), X_test: (297726, 30)
+2025-09-06 18:12:44 | INFO | [fit_logit_predict] Numéricas: 30 | Categóricas: 0
+2025-09-06 18:12:44 | INFO | [fit_logit_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\logit_pca_lda_confusion.png
+2025-09-06 18:12:44 | INFO | [fit_logit_predict] Métricas en test:
+2025-09-06 18:12:44 | INFO | AUC=0.7469 | Acc=0.7559 | F1=0.3972 | BalAcc=0.6148
+2025-09-06 18:12:44 | INFO | PR_AUC(AP)=0.6021 | KS=0.3500 | Brier=0.1677
+2025-09-06 18:12:52 | INFO | [fit_logit_predict] Iniciando entrenamiento Logit...
+2025-09-06 18:12:52 | INFO | [fit_logit_predict] Tamaños -> X_train: (694694, 54), X_test: (297726, 54)
+2025-09-06 18:12:52 | INFO | [fit_logit_predict] Numéricas: 54 | Categóricas: 0
+2025-09-06 18:12:52 | INFO | [fit_logit_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\logit_anova_confusion.png
+2025-09-06 18:12:52 | INFO | [fit_logit_predict] Métricas en test:
+2025-09-06 18:12:52 | INFO | AUC=0.7463 | Acc=0.7559 | F1=0.3967 | BalAcc=0.6146
+2025-09-06 18:12:52 | INFO | PR_AUC(AP)=0.6012 | KS=0.3512 | Brier=0.1678
+2025-09-06 18:12:52 | INFO | LOGIT | PCA+LDA AUC: 0.7469
+2025-09-06 18:12:52 | INFO | LOGIT | ANOVA   AUC: 0.7463
+2025-09-06 18:12:52 | INFO | [TIMER] LOGIT: 11.89s
+2025-09-06 18:12:56 | INFO | [fit_gaussian_nb_predict] Iniciando entrenamiento GaussianNB...
+2025-09-06 18:12:56 | INFO | [fit_gaussian_nb_predict] Tamaños -> X_train: (694694, 30), X_test: (297726, 30)
+2025-09-06 18:12:56 | INFO | [fit_gaussian_nb_predict] Numéricas: 30 | Categóricas: 0
+2025-09-06 18:12:56 | INFO | [fit_gaussian_nb_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\gnb_pca_lda_confusion.png
+2025-09-06 18:12:56 | INFO | [fit_gaussian_nb_predict] Métricas en test:
+2025-09-06 18:12:56 | INFO | AUC=0.7196 | Acc=0.7403 | F1=0.2784 | BalAcc=0.5733
+2025-09-06 18:12:56 | INFO | PR_AUC(AP)=0.5607 | KS=0.3180 | Brier=0.2436
+2025-09-06 18:13:02 | INFO | [fit_gaussian_nb_predict] Iniciando entrenamiento GaussianNB...
+2025-09-06 18:13:02 | INFO | [fit_gaussian_nb_predict] Tamaños -> X_train: (694694, 54), X_test: (297726, 54)
+2025-09-06 18:13:02 | INFO | [fit_gaussian_nb_predict] Numéricas: 54 | Categóricas: 0
+2025-09-06 18:13:02 | INFO | [fit_gaussian_nb_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\gnb_anova_confusion.png
+2025-09-06 18:13:02 | INFO | [fit_gaussian_nb_predict] Métricas en test:
+2025-09-06 18:13:02 | INFO | AUC=0.7064 | Acc=0.7315 | F1=0.3040 | BalAcc=0.5757
+2025-09-06 18:13:02 | INFO | PR_AUC(AP)=0.5253 | KS=0.3014 | Brier=0.2562
+2025-09-06 18:13:02 | INFO | GNB | PCA+LDA AUC: 0.7196
+2025-09-06 18:13:02 | INFO | GNB | ANOVA   AUC: 0.7064
+2025-09-06 18:13:02 | INFO | [TIMER] GNB: 10.59s
+2025-09-06 18:13:13 | INFO | [fit_linear_svm_predict] Iniciando entrenamiento Linear SVM calibrado...
+2025-09-06 18:13:13 | INFO | [fit_linear_svm_predict] Tamaños -> X_train: (694694, 30), X_test: (297726, 30)
+2025-09-06 18:13:13 | INFO | [fit_linear_svm_predict] Numéricas: 30 | Categóricas: 0
+2025-09-06 18:13:13 | INFO | [fit_linear_svm_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\svm_linear_pca_lda_confusion.png
+2025-09-06 18:13:13 | INFO | [fit_linear_svm_predict] Métricas en test:
+2025-09-06 18:13:13 | INFO | AUC=0.7457 | Acc=0.7547 | F1=0.3567 | BalAcc=0.6015
+2025-09-06 18:13:13 | INFO | PR_AUC(AP)=0.6000 | KS=0.3483 | Brier=0.1889
+2025-09-06 18:13:31 | INFO | [fit_linear_svm_predict] Iniciando entrenamiento Linear SVM calibrado...
+2025-09-06 18:13:31 | INFO | [fit_linear_svm_predict] Tamaños -> X_train: (694694, 54), X_test: (297726, 54)
+2025-09-06 18:13:31 | INFO | [fit_linear_svm_predict] Numéricas: 54 | Categóricas: 0
+2025-09-06 18:13:31 | INFO | [fit_linear_svm_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\svm_linear_anova_confusion.png
+2025-09-06 18:13:31 | INFO | [fit_linear_svm_predict] Métricas en test:
+2025-09-06 18:13:31 | INFO | AUC=0.7450 | Acc=0.7542 | F1=0.3554 | BalAcc=0.6009
+2025-09-06 18:13:31 | INFO | PR_AUC(AP)=0.5992 | KS=0.3486 | Brier=0.1890
+2025-09-06 18:13:31 | INFO | SVM Linear | PCA+LDA AUC: 0.7457
+2025-09-06 18:13:31 | INFO | SVM Linear | ANOVA   AUC: 0.7450
+2025-09-06 18:13:31 | INFO | [TIMER] SVM Linear: 28.51s
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.01), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.01), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.1), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.1), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(1.0), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(1.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(10.0), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(10.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(100.0), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(100.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\svm_best_pca_lda_confusion.png
+2025-09-06 18:13:41 | INFO | [fit_linear_svm_smartsearch] Mejor params: {'C': np.float64(10.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False} con AUC=0.7469
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.01), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.01), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.1), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(0.1), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(1.0), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(1.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(10.0), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(10.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(100.0), 'loss': 'squared_hinge', 'class_weight': None, 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Probando params: {'C': np.float64(100.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\svm_best_anova_confusion.png
+2025-09-06 18:13:59 | INFO | [fit_linear_svm_smartsearch] Mejor params: {'C': np.float64(100.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False} con AUC=0.7463
+2025-09-06 18:13:59 | INFO | SVM best | PCA+LDA AUC: 0.7469 | params: {'C': np.float64(10.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | SVM best | ANOVA   AUC: 0.7463 | params: {'C': np.float64(100.0), 'loss': 'squared_hinge', 'class_weight': 'balanced', 'random_state': 42, 'max_iter': 3000, 'tol': 0.001, 'dual': False}
+2025-09-06 18:13:59 | INFO | [TIMER] SVM Linear smart: 28.33s
+2025-09-06 18:14:44 | INFO | [fit_mlp_predict] Entrenando MLP...
+2025-09-06 18:14:44 | INFO | [fit_mlp_predict] Tamaños -> X_train: (694694, 30), X_test: (297726, 30)
+2025-09-06 18:14:44 | INFO | [fit_mlp_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\mlp_pca_lda_confusion.png
+2025-09-06 18:14:44 | INFO | [fit_mlp_predict] Métricas en test:
+2025-09-06 18:14:44 | INFO | AUC=0.7741 | Acc=0.7706 | F1=0.4806 | BalAcc=0.6510
+2025-09-06 18:14:44 | INFO | PR_AUC(AP)=0.6449 | KS=0.3955 | Brier=0.1592
+2025-09-06 18:15:06 | INFO | [fit_mlp_predict] Entrenando MLP...
+2025-09-06 18:15:06 | INFO | [fit_mlp_predict] Tamaños -> X_train: (694694, 54), X_test: (297726, 54)
+2025-09-06 18:15:06 | INFO | [fit_mlp_predict] Matriz de confusión guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\imagenes\mlp_anova_confusion.png
+2025-09-06 18:15:06 | INFO | [fit_mlp_predict] Métricas en test:
+2025-09-06 18:15:06 | INFO | AUC=0.7747 | Acc=0.7687 | F1=0.4776 | BalAcc=0.6493
+2025-09-06 18:15:06 | INFO | PR_AUC(AP)=0.6411 | KS=0.3973 | Brier=0.1597
+2025-09-06 18:15:06 | INFO | MLP | PCA+LDA AUC: 0.7741
+2025-09-06 18:15:06 | INFO | MLP | ANOVA   AUC: 0.7747
+2025-09-06 18:15:06 | INFO | [TIMER] MLP: 66.98s
+2025-09-06 18:15:07 | INFO | [ModelComparator] Usando dataframe PCA+LDA original: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\df_pca_lda.csv
+2025-09-06 18:15:09 | INFO | [ModelComparator] Usando dataframe ANOVA original: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\df_anova.csv
+2025-09-06 18:15:09 | INFO | [ModelComparator] Usando todas las columnas disponibles para pca: 30 variables
+2025-09-06 18:15:09 | INFO | [ModelComparator] Algunas variables finales no disponibles en anova, usando todas menos target
+2025-09-06 18:15:09 | INFO | [ModelComparator] Usando todas las columnas disponibles para anova: 54 variables
+2025-09-06 18:15:20 | INFO | RESULTADOS FINALES - COMPARATIVA DE MODELOS:
+2025-09-06 18:15:20 | INFO | ============================================================
+2025-09-06 18:15:20 | INFO | MLP | ANOVA: AUC=0.7747 | PR-AUC=0.6411 | Brier=0.1597
+2025-09-06 18:15:20 | INFO | MLP | PCA+LDA: AUC=0.7741 | PR-AUC=0.6449 | Brier=0.1592
+2025-09-06 18:15:20 | INFO | LOGIT | PCA+LDA: AUC=0.7469 | PR-AUC=0.6021 | Brier=0.1677
+2025-09-06 18:15:20 | INFO | LOGIT | ANOVA: AUC=0.7463 | PR-AUC=0.6012 | Brier=0.1678
+2025-09-06 18:15:20 | INFO | SVM best | PCA+LDA: AUC=0.7459 | PR-AUC=0.5998 | Brier=0.2130
+2025-09-06 18:15:20 | INFO | SVM best | ANOVA: AUC=0.7451 | PR-AUC=0.5986 | Brier=0.2131
+2025-09-06 18:15:20 | INFO | GNB | PCA+LDA: AUC=0.7196 | PR-AUC=0.5607 | Brier=0.2436
+2025-09-06 18:15:20 | INFO | GNB | ANOVA: AUC=0.7064 | PR-AUC=0.5253 | Brier=0.2562
+2025-09-06 18:15:20 | INFO | Tabla comparativa guardada en: C:\Users\USUARIO\Documents\MAESTRÍA\TFM_git\reports\model_comparison.csv
+2025-09-06 18:15:20 | INFO | [TIMER] Comparativa: 13.41s
+2025-09-06 18:15:20 | INFO | MODELING PIPELINE COMPLETED SUCCESSFULLY
+2025-09-06 18:15:20 | INFO | [TIMER] Tiempo total: 165.71s
