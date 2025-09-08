@@ -350,8 +350,8 @@ def analyze_real_int_rate_sensitivity(df: pd.DataFrame, model=None, target_col: 
             log_message(f"❌ Error: Columna '{target_col}' no encontrada en el DataFrame")
         return pd.DataFrame()
     
-    # Filtrar datos válidos
-    df_clean = df[[int_rate_col, target_col]].dropna()
+    # Filtrar datos válidos - mantener TODAS las variables
+    df_clean = df.dropna(subset=[int_rate_col, target_col])
     if len(df_clean) == 0:
         if verbose:
             log_message("❌ Error: No hay datos válidos después de limpiar nulos")
@@ -396,50 +396,135 @@ def analyze_real_int_rate_sensitivity(df: pd.DataFrame, model=None, target_col: 
         
         if model is not None:
             # Usar predicciones del modelo
-            # NOTA: Para esto necesitaríamos las variables del modelo, pero por simplicidad
-            # usaremos la tasa real de impago como proxy de la sensibilidad del modelo
-            # En una implementación completa, necesitaríamos reconstruir las features del modelo
-            default_rate = range_data[target_col].mean()
-            default_count = range_data[target_col].sum()
-            
-            # Calcular intervalo de confianza para la proporción
-            from scipy.stats import beta
-            alpha = 1 - confidence_level
-            lower_ci = beta.ppf(alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
-            upper_ci = beta.ppf(1 - alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+            try:
+                # Crear dataset con int_rate modificado para este rango
+                df_test = range_data.copy()
+                
+                # Establecer int_rate al valor medio del rango para todas las observaciones
+                rate_mean = range_data[int_rate_col].mean()
+                df_test[int_rate_col] = rate_mean
+                
+                # Usar TODAS las variables disponibles en el dataset (excepto target)
+                # Esto asegura que usamos exactamente las mismas variables con las que se entrenó el modelo
+                available_features = [col for col in df_test.columns if col not in [target_col, 'rate_range']]
+                
+                if verbose:
+                    log_message(f"📊 Usando {len(available_features)} variables para predicción")
+                
+                if len(available_features) < 2:
+                    if verbose:
+                        log_message(f"⚠️ Rango {range_label}: Insuficientes features disponibles")
+                    continue
+                
+                # Crear dataset para predicción con las variables correctas
+                X_test = df_test[available_features].fillna(df_test[available_features].median())
+                
+                # Hacer predicciones
+                if hasattr(model, 'predict_proba'):
+                    y_proba = model.predict_proba(X_test)[:, 1]
+                else:
+                    # Para modelos sin predict_proba, usar decision_function
+                    scores = model.decision_function(X_test)
+                    y_proba = 1.0 / (1.0 + np.exp(-scores))
+                
+                # Calcular estadísticas
+                predicted_rate = y_proba.mean()
+                
+                # Calcular intervalo de confianza para la media
+                from scipy import stats
+                ci = stats.t.interval(confidence_level, len(y_proba)-1, 
+                                    loc=predicted_rate, 
+                                    scale=stats.sem(y_proba))
+                lower_ci, upper_ci = ci
+                
+            except Exception as e:
+                if verbose:
+                    log_message(f"⚠️ Error en rango {range_label}: {str(e)}")
+                continue
         else:
-            # Usar tasas reales de impago
-            default_rate = range_data[target_col].mean()
-            default_count = range_data[target_col].sum()
-            
-            # Calcular intervalo de confianza para la proporción
-            from scipy.stats import beta
-            alpha = 1 - confidence_level
-            lower_ci = beta.ppf(alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
-            upper_ci = beta.ppf(1 - alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+            # Usar tasas reales de impago o probabilidades predichas
+            if target_col == "predicted_prob":
+                # Usar probabilidades predichas directamente
+                predicted_rate = range_data[target_col].mean()
+                # Calcular intervalo de confianza para la media de probabilidades
+                from scipy import stats
+                ci = stats.t.interval(confidence_level, len(range_data[target_col])-1, 
+                                    loc=predicted_rate, 
+                                    scale=stats.sem(range_data[target_col]))
+                lower_ci, upper_ci = ci
+            else:
+                # Usar tasas reales de impago
+                default_rate = range_data[target_col].mean()
+                default_count = range_data[target_col].sum()
+                
+                # Calcular intervalo de confianza para la proporción
+                from scipy.stats import beta
+                alpha = 1 - confidence_level
+                lower_ci = beta.ppf(alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
+                upper_ci = beta.ppf(1 - alpha/2, default_count + 0.5, n_obs - default_count + 0.5)
         
         # Estadísticas del rango de tasa
         rate_min = range_data[int_rate_col].min()
         rate_max = range_data[int_rate_col].max()
         rate_mean = range_data[int_rate_col].mean()
         
-        results.append({
-            'rate_range': range_label,
-            'rate_min': rate_min,
-            'rate_max': rate_max,
-            'rate_mean': rate_mean,
-            'n_observations': n_obs,
-            'default_count': int(default_count),
-            'default_rate': default_rate,
-            'default_rate_pct': default_rate * 100,
-            'ci_lower': lower_ci,
-            'ci_upper': upper_ci,
-            'ci_lower_pct': lower_ci * 100,
-            'ci_upper_pct': upper_ci * 100
-        })
+        if model is not None:
+            # Usar predicciones del modelo
+            results.append({
+                'rate_range': range_label,
+                'rate_min': rate_min,
+                'rate_max': rate_max,
+                'rate_mean': rate_mean,
+                'n_observations': n_obs,
+                'predicted_rate': predicted_rate,
+                'predicted_rate_pct': predicted_rate * 100,
+                'ci_lower': lower_ci,
+                'ci_upper': upper_ci,
+                'ci_lower_pct': lower_ci * 100,
+                'ci_upper_pct': upper_ci * 100
+            })
+        else:
+            # Usar tasas reales de impago o probabilidades predichas
+            if target_col == "predicted_prob":
+                # Usar probabilidades predichas
+                results.append({
+                    'rate_range': range_label,
+                    'rate_min': rate_min,
+                    'rate_max': rate_max,
+                    'rate_mean': rate_mean,
+                    'n_observations': n_obs,
+                    'predicted_rate': predicted_rate,
+                    'predicted_rate_pct': predicted_rate * 100,
+                    'ci_lower': lower_ci,
+                    'ci_upper': upper_ci,
+                    'ci_lower_pct': lower_ci * 100,
+                    'ci_upper_pct': upper_ci * 100
+                })
+            else:
+                # Usar tasas reales de impago
+                results.append({
+                    'rate_range': range_label,
+                    'rate_min': rate_min,
+                    'rate_max': rate_max,
+                    'rate_mean': rate_mean,
+                    'n_observations': n_obs,
+                    'default_count': int(default_count),
+                    'default_rate': default_rate,
+                    'default_rate_pct': default_rate * 100,
+                    'ci_lower': lower_ci,
+                    'ci_upper': upper_ci,
+                    'ci_lower_pct': lower_ci * 100,
+                    'ci_upper_pct': upper_ci * 100
+                })
         
         if verbose:
-            log_message(f"  📊 {range_label}: {n_obs:,} obs | {default_rate*100:.2f}% impago [{lower_ci*100:.2f}%, {upper_ci*100:.2f}%]")
+            if model is not None:
+                log_message(f"  📊 {range_label}: {n_obs:,} obs | {predicted_rate*100:.2f}% predicho [{lower_ci*100:.2f}%, {upper_ci*100:.2f}%]")
+            else:
+                if target_col == "predicted_prob":
+                    log_message(f"  📊 {range_label}: {n_obs:,} obs | {predicted_rate*100:.2f}% predicho [{lower_ci*100:.2f}%, {upper_ci*100:.2f}%]")
+                else:
+                    log_message(f"  📊 {range_label}: {n_obs:,} obs | {default_rate*100:.2f}% impago [{lower_ci*100:.2f}%, {upper_ci*100:.2f}%]")
     
     if not results:
         if verbose:
@@ -451,45 +536,42 @@ def analyze_real_int_rate_sensitivity(df: pd.DataFrame, model=None, target_col: 
     
     # Crear gráfico
     if save_path:
-        plt.figure(figsize=(12, 8))
-        
-        # Gráfico principal
-        plt.subplot(2, 1, 1)
+        plt.figure(figsize=(12, 6))
         x_pos = range(len(df_results))
-        plt.errorbar(x_pos, df_results['default_rate_pct'], 
-                    yerr=[df_results['default_rate_pct'] - df_results['ci_lower_pct'],
-                          df_results['ci_upper_pct'] - df_results['default_rate_pct']],
-                    marker='o', capsize=5, capthick=2, linewidth=2, markersize=8)
         
         if model is not None:
-            plt.title(f'Sensibilidad del Modelo: Tasa de Interés vs Probabilidad de Impago - {model_name}', fontsize=14, fontweight='bold')
+            # Usar predicciones del modelo
+            rate_col = 'predicted_rate_pct'
+            ylabel = 'Probabilidad Predicha por el Modelo (%)'
+            title = f'Curva de Sensibilidad: {int_rate_col} vs Probabilidad Predicha - {model_name}'
         else:
-            plt.title(f'Análisis de Sensibilidad Real: Tasa de Interés vs Probabilidad de Impago - {model_name}', fontsize=14, fontweight='bold')
-        plt.xlabel('Rangos de Tasa de Interés (%)', fontsize=12)
-        plt.ylabel('Tasa Real de Impago (%)', fontsize=12)
-        plt.xticks(x_pos, df_results['rate_range'], rotation=45, ha='right')
+            # Usar tasas reales de impago o probabilidades predichas
+            if target_col == "predicted_prob":
+                rate_col = 'predicted_rate_pct'
+                ylabel = 'Probabilidad Predicha por el Modelo (%)'
+                title = f'Curva de Sensibilidad: {int_rate_col} vs Probabilidad Predicha - {model_name}'
+            else:
+                rate_col = 'default_rate_pct'
+                ylabel = 'Tasa Real de Impago (%)'
+                title = f'Curva de Sensibilidad: {int_rate_col} vs Probabilidad de Impago - {model_name}'
+        
+        # Solo gráfico de curvas de sensibilidad (sin materialidad)
+        plt.errorbar(x_pos, df_results[rate_col], 
+                    yerr=[df_results[rate_col] - df_results['ci_lower_pct'],
+                          df_results['ci_upper_pct'] - df_results[rate_col]],
+                    marker='o', capsize=5, capthick=2, linewidth=2, markersize=8,
+                    color='blue', alpha=0.8)
+        
+        plt.title(title, fontsize=14, fontweight='bold')
+        plt.xlabel(f'Rangos de {int_rate_col}', fontsize=12)
+        plt.ylabel(ylabel, fontsize=12)
         plt.grid(True, alpha=0.3)
-        
-        # Agregar valores en las barras
-        for i, (rate, ci_low, ci_high) in enumerate(zip(df_results['default_rate_pct'], 
-                                                       df_results['ci_lower_pct'], 
-                                                       df_results['ci_upper_pct'])):
-            plt.text(i, rate + (ci_high - rate) + 0.5, f'{rate:.1f}%', 
-                    ha='center', va='bottom', fontweight='bold', fontsize=10)
-        
-        # Gráfico de número de observaciones
-        plt.subplot(2, 1, 2)
-        plt.bar(x_pos, df_results['n_observations'], alpha=0.7, color='lightblue', edgecolor='navy')
-        plt.title('Número de Observaciones por Rango', fontsize=12, fontweight='bold')
-        plt.xlabel('Rangos de Tasa de Interés (%)', fontsize=12)
-        plt.ylabel('Número de Observaciones', fontsize=12)
         plt.xticks(x_pos, df_results['rate_range'], rotation=45, ha='right')
-        plt.grid(True, alpha=0.3, axis='y')
         
-        # Agregar valores en las barras
-        for i, n_obs in enumerate(df_results['n_observations']):
-            plt.text(i, n_obs + max(df_results['n_observations']) * 0.01, f'{n_obs:,}', 
-                    ha='center', va='bottom', fontweight='bold', fontsize=10)
+        # Añadir información de probabilidad predicha en el gráfico
+        for i, (x, y, prob) in enumerate(zip(x_pos, df_results[rate_col], df_results[rate_col])):
+            plt.annotate(f'{prob:.1f}%', (x, y), textcoords="offset points", 
+                        xytext=(0,10), ha='center', fontsize=8, alpha=0.7)
         
         plt.tight_layout()
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -497,15 +579,26 @@ def analyze_real_int_rate_sensitivity(df: pd.DataFrame, model=None, target_col: 
         plt.close()
         
         if verbose:
-            log_message(f"📊 Gráfico guardado en: {save_path}")
+            log_message(f"📊 Curva de sensibilidad guardada en: {save_path}")
     
     if verbose:
         log_message(f"\n🎯 RESUMEN DEL ANÁLISIS:")
         log_message(f"   ✅ Rangos analizados: {len(df_results)}")
         log_message(f"   📊 Observaciones totales: {df_results['n_observations'].sum():,}")
-        log_message(f"   📈 Tasa mínima de impago: {df_results['default_rate_pct'].min():.2f}%")
-        log_message(f"   📈 Tasa máxima de impago: {df_results['default_rate_pct'].max():.2f}%")
-        log_message(f"   📊 Correlación tasa-impago: {df_results['rate_mean'].corr(df_results['default_rate']):.4f}")
+        
+        if model is not None:
+            log_message(f"   📈 Probabilidad mínima predicha: {df_results['predicted_rate_pct'].min():.2f}%")
+            log_message(f"   📈 Probabilidad máxima predicha: {df_results['predicted_rate_pct'].max():.2f}%")
+            log_message(f"   📊 Correlación tasa-probabilidad: {df_results['rate_mean'].corr(df_results['predicted_rate']):.4f}")
+        else:
+            if target_col == "predicted_prob":
+                log_message(f"   📈 Probabilidad mínima predicha: {df_results['predicted_rate_pct'].min():.2f}%")
+                log_message(f"   📈 Probabilidad máxima predicha: {df_results['predicted_rate_pct'].max():.2f}%")
+                log_message(f"   📊 Correlación tasa-probabilidad: {df_results['rate_mean'].corr(df_results['predicted_rate']):.4f}")
+            else:
+                log_message(f"   📈 Tasa mínima de impago: {df_results['default_rate_pct'].min():.2f}%")
+                log_message(f"   📈 Tasa máxima de impago: {df_results['default_rate_pct'].max():.2f}%")
+                log_message(f"   📊 Correlación tasa-impago: {df_results['rate_mean'].corr(df_results['default_rate']):.4f}")
     
     return df_results
 

@@ -118,87 +118,12 @@ class EDAPipeline:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         loan_data_path = os.path.join(current_dir, 'Loan_data.csv')
         
-        defaults = {
-            'data': {
-                'input_csv': loan_data_path,
-                'status_column': 'loan_status',
-                'target_column': 'flg_target',
-                'allowed_status': {'good': [], 'bad': []},
-                'drop_missing_status': True,
-                'output_dir': '.',
-                'output_pca_lda_csv': 'df_pca_lda.csv',
-                'output_anova_csv': 'df_anova.csv',
-            },
-            'cleaning': {
-                'enable_drop_null_columns': True,
-                'drop_null_threshold': 0.95,
-                'enable_drop_irrelevant_columns': True,
-                'drop_columns': [],
-                'enable_drop_ex_post': True,
-                'drop_ex_post_columns': [],
-            },
-            'features': {
-                'derive': {
-                    # Variables básicas existentes
-                    'enable_term_integer': True,
-                    'enable_emp_length_months': True,
-                    'enable_ratio_loan_income': True,
-                    'enable_installment_pct_loan': True,
-                    'enable_fico_avg': True,
-                    'enable_revol_util_ratio': True,
-                    'enable_installment_income_ratio': True,
-                    
-                    # NUEVAS VARIABLES PARA MEJORAR AUC
-                    # 1. Variables de capacidad de pago
-                    'enable_debt_to_income_enhanced': True,
-                    'enable_payment_capacity_score': True,
-                    
-                    # 2. Variables de historial crediticio
-                    'enable_credit_history_score': True,
-                    'enable_credit_utilization_risk': True,
-                    
-                    # 3. Variables de comportamiento financiero
-                    'enable_financial_behavior_score': True,
-                    'enable_credit_seeking_behavior': True,
-                    
-                    # 4. Variables de estabilidad
-                    'enable_employment_stability': True,
-                    'enable_loan_risk_profile': True,
-                    
-                    # 5. Variables de interacción
-                    'enable_fico_dti_interaction': True,
-                    'enable_income_grade_interaction': True,
-                    
-                    # 6. Variables de ratios financieros avanzados
-                    'enable_advanced_financial_ratios': True,
-                    
-                    # 7. Variables de tendencias temporales
-                    'enable_temporal_trends': True,
-                }
-            },
-            'preprocessing': {
-                'enable_missing_imputation': True,
-                'imputation_strategy': 'median',
-                'enable_winsorization': True,
-                'winsorization_percentiles': {'lower': 0.01, 'upper': 0.99},
-            },
-            'selection': {
-                'filter_missing': {'enable': True, 'threshold': 0.5, 'rescue_by_correlation': True, 'min_corr': 0.1, 'min_samples': 30},
-                'filter_cv': {'enable': True, 'threshold': 0.1, 'rescue_by_correlation': True, 'min_corr': 0.1, 'min_samples': 30},
-                'pca': {
-                    'enable': True, 
-                    'mode': 'variance_percentage',  # 'fixed_components' o 'variance_percentage'
-                    'n_components': 35,  # Solo se usa si mode='fixed_components'
-                    'variance_threshold': 0.95,  # Solo se usa si mode='variance_percentage'
-                    'plot_variance': False
-                },
-                'lda_importance': {'enable': True, 'importance_threshold': 0.05, 'plot_importance': False},
-                'anova': {'enable': True, 'min_f_score': None, 'max_p_value': 0.05, 'top_n': None},
-                'correlation_redundancy': {'enable': True, 'threshold': 0.6, 'plot_heatmap': False},
-            },
-            'logging': {'verbose': True, 'log_file': 'log_EDA.txt'}
-        }
-        self.config = load_config(config_path, defaults=defaults)
+
+
+
+
+        # Cargar configuración desde archivo YAML (sin defaults hardcodeados)
+        self.config = load_config(config_path)
         self.verbose = bool(self.config.get('logging', {}).get('verbose', True))
         
         # Setup logging
@@ -365,7 +290,8 @@ class EDAPipeline:
         self.logger.info(f"Starting shape: {df2.shape}")
         
         if cfg.get('enable_drop_null_columns', True):
-            thr = float(cfg.get('drop_null_threshold', 0.95))
+            # Usar el mismo threshold que filter_missing para consistencia
+            thr = float(self.config.get('selection', {}).get('filter_missing', {}).get('threshold', 0.95))
             self.logger.info(f"Null threshold: {thr*100:.0f}%")
             
             # Calculate null percentages for all columns
@@ -436,7 +362,8 @@ class EDAPipeline:
             max_unique_cats=max_unique_cats,
             max_concentration=max_concentration,
             protected_variables=protected_variables,
-            verbose=True, logger=self.logger  # Solo log, no prints en terminal
+            verbose=True, logger=self.logger,  # Solo log, no prints en terminal
+            config=self.config
         )
 
         cat_cols = vars_dict['categoricas']
@@ -525,7 +452,7 @@ class EDAPipeline:
 
         self.logger.info(f"Starting with {len(num_cols)} numerical variables")
         
-        resumen = Exploracion.resumen_numericas(df, num_cols)
+        resumen = Exploracion.resumen_numericas(df, num_cols, config=self.config)
         cfg = self.config['selection']
         selected = num_cols
         
@@ -534,7 +461,7 @@ class EDAPipeline:
         self.logger.info(f"  Total variables: {len(num_cols)}")
         
         if cfg['filter_missing'].get('enable', True):
-            thr = float(cfg['filter_missing'].get('threshold', 0.5))
+            thr = float(cfg['filter_missing'].get('threshold', 0.95))
             self.logger.info(f"Applying missing value filter (threshold: {thr*100:.0f}%)")
             
             selected = SelectVarsNumerics.filtrar_por_nulos(
@@ -545,7 +472,8 @@ class EDAPipeline:
                 rescatar=bool(cfg['filter_missing'].get('rescue_by_correlation', True)),
                 min_corr=float(cfg['filter_missing'].get('min_corr', 0.1)),
                 min_samples=int(cfg['filter_missing'].get('min_samples', 30)),
-                logger=self.logger
+                logger=self.logger,
+                config=self.config
             )
             self.logger.info(f"After missing value filter: {len(selected)} variables")
 
@@ -562,6 +490,7 @@ class EDAPipeline:
                 rescatar=bool(cfg['filter_cv'].get('rescue_by_correlation', True)),
                 min_corr=float(cfg['filter_cv'].get('min_corr', 0.1)),
                 min_samples=int(cfg['filter_cv'].get('min_samples', 30)),
+                config=self.config
             )
             self.logger.info(f"After CV filter: {len(selected)} variables")
         
@@ -587,7 +516,7 @@ class EDAPipeline:
 
         # Obtener configuración
         config = self.config.get('categorical_selection', {})
-        iv_threshold = config.get('iv_threshold', 0.3)  # Cambiado a 0.3 (MEDIA en adelante)
+        iv_threshold = config.get('iv_threshold', 0.05)  # Usar valor del config
         chi_square_threshold = config.get('chi_square_threshold', 0.05)
         enable_chi_square = config.get('enable_chi_square', True)
         enable_woe_iv = config.get('enable_woe_iv', True)
@@ -601,7 +530,7 @@ class EDAPipeline:
         if enable_woe_iv:
             selected_vars, woe_iv_results, ranking = SelectVarsCategoricals.select_categorical_variables(
                 df, cat_cols, target=self.config['data']['target_column'],
-                iv_threshold=iv_threshold, verbose=True  # Detallado en log
+                iv_threshold=iv_threshold, verbose=True, config=self.config  # Detallado en log
             )
             
             # PASO NUEVO: Conversión a WOE
@@ -609,7 +538,7 @@ class EDAPipeline:
                 df_woe, woe_columns = SelectVarsCategoricals.convert_categorical_to_woe(
                     df, selected_vars, woe_iv_results, 
                     target=self.config['data']['target_column'],
-                    verbose=True, logger=self.logger
+                    verbose=True, logger=self.logger, config=self.config
                 )
                 self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
                 self.logger.info(f"   ✅ Variables iniciales: {len(cat_cols)}")
@@ -632,7 +561,7 @@ class EDAPipeline:
             # Solo Chi-square si WOE/IV está deshabilitado
             selected_vars = SelectVarsCategoricals.chi_square_test(
                 df, cat_cols, target=self.config['data']['target_column'],
-                threshold=chi_square_threshold, verbose=True  # Detallado en log
+                threshold=chi_square_threshold, verbose=True, config=self.config  # Detallado en log
             )
             
             self.logger.info(f"\n📊 RESULTADO SELECCIÓN CATEGÓRICA:")
@@ -685,6 +614,7 @@ class EDAPipeline:
                 num_cols,
                 plot_variance=plot_variance,
                 verbose=self.verbose,
+                config=self.config
             )
             self.logger.info("PCA completed successfully")
         
@@ -706,6 +636,7 @@ class EDAPipeline:
             umbral_importancia=importance_threshold,
             plot_graph=plot_importance,
             verbose=self.verbose,
+            config=self.config
         )
         
         # ASEGURAR QUE int_rate ESTÉ EN LOS RESULTADOS FINALES
@@ -750,6 +681,7 @@ class EDAPipeline:
             max_p_value=max_p_value,
             top_n=top_n,
             verbose=self.verbose,
+            config=self.config
         )
         
         # ASEGURAR QUE int_rate ESTÉ EN LOS RESULTADOS FINALES
@@ -798,6 +730,7 @@ class EDAPipeline:
             threshold=threshold,
             plot_heatmap=plot_heatmap,
             verbose=self.verbose,
+            config=self.config
         )
         
         # ASEGURAR QUE int_rate NO SEA ELIMINADA POR CORRELACIÓN

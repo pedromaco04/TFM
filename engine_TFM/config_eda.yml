@@ -18,7 +18,6 @@ data:
 
 cleaning:
   enable_drop_null_columns: true
-  drop_null_threshold: 0.95
   enable_drop_irrelevant_columns: true
   drop_columns:
     - "Unnamed: 0"
@@ -95,19 +94,19 @@ preprocessing:
   imputation_strategy: "median"          # Estrategia: "median", "mean", "mode"
   enable_winsorization: true             # Habilitar winsorización (topeo) de outliers
   winsorization_percentiles:             # Percentiles para topeo
-    lower: 0.01                          # Percentil inferior (1%)
-    upper: 0.99                          # Percentil superior (99%)
+    lower: 0.02                          # Percentil inferior (1%)
+    upper: 0.98                          # Percentil superior (99%)
 
 selection:
   filter_missing:
     enable: true
-    threshold: 0.8
+    threshold: 0.95
     rescue_by_correlation: true
     min_corr: 0.1
     min_samples: 30
   filter_cv:
     enable: true
-    threshold: 0.1
+    threshold: 0.05
     rescue_by_correlation: true
     min_corr: 0.1
     min_samples: 30
@@ -118,7 +117,7 @@ selection:
     # - "variance_percentage": Calcula automáticamente el número de componentes que explican el porcentaje especificado
     mode: "variance_percentage"  # Opciones: "fixed_components" o "variance_percentage"
     n_components: 35             # Solo se usa si mode="fixed_components"
-    variance_threshold: 0.975     # Solo se usa si mode="variance_percentage" (95% de varianza)
+    variance_threshold: 0.95     # Solo se usa si mode="variance_percentage" (95% de varianza)
     plot_variance: false
   lda_importance:
     enable: true
@@ -131,15 +130,16 @@ selection:
     top_n: null
   correlation_redundancy:
     enable: true
-    threshold: 0.8
+    threshold: 0.6
     plot_heatmap: false
 
 # Configuración para separación inteligente de variables
 separation:
   max_unique_categorical: 20          # Máximo valores únicos para mantener categórica
   max_concentration_categorical: 0.98 # Máxima concentración de un solo valor (98%)
-  enable_auto_numeric_conversion: true # Habilitar conversión automática a numérico
-  enable_categorical_filtering: true   # Habilitar filtrado de categóricas problemáticas
+  sample_size_for_analysis: 100       # Tamaño de muestra para análisis de tipos
+  max_code_length: 10                 # Longitud máxima para considerar como código
+  statistical_percentiles: [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]  # Percentiles para estadísticas
 
 # Configuración para selección de variables categóricas
 categorical_selection:
@@ -147,22 +147,18 @@ categorical_selection:
   enable_woe_iv: true                 # Habilitar cálculo WOE/IV
   iv_threshold: 0.1                  # Umbral mínimo de Information Value (MEDIA en adelante)
   chi_square_threshold: 0.05         # Umbral p-value para Chi-square
+  # Categorías de Information Value según estándares de la industria
+  iv_categories:
+    no_predictive: 0.02              # No predictiva
+    weak: 0.1                        # Débil
+    medium: 0.3                      # Media
+    strong: 0.5                      # Fuerte
 
 # Configuración para protección de int_rate
 int_rate_protection:
   enable_protection: true            # Habilitar protección de int_rate
   protected_variable: "int_rate"     # Variable a proteger
-  correlation_threshold: 0.8         # Umbral de correlación alta con int_rate
-  priority_over_correlated: true     # Priorizar int_rate sobre variables correlacionadas
-  force_include_int_rate: true       # Forzar inclusión de int_rate en resultados finales
-
-# Configuración para análisis de sensibilidad real de tasa de interés
-sensitivity_analysis:
-  enable_real_sensitivity: true      # Habilitar análisis de sensibilidad real
-  step: 2.0                         # Paso para los rangos de tasa (en %)
-  min_samples: 100                  # Mínimo número de observaciones por grupo
-  confidence_level: 0.95            # Nivel de confianza para intervalos (0.95 = 95%)
-  save_plots: true                  # Guardar gráficos de sensibilidad
+  correlation_threshold: 0.7         # Umbral de correlación alta con int_rate
 
 logging:
   verbose: true

@@ -61,6 +61,7 @@ class ModelingEngine:
         test_size=0.3,
         random_state=42,
         model_params=None,
+        config=None,
         show_confusion=True,
         verbose=False,
         save_confusion_path=None,
@@ -84,7 +85,23 @@ class ModelingEngine:
             ('cat', cat_pipeline, cat_cols)
         ])
         
-        model = LogisticRegression(max_iter=1000, random_state=random_state, **model_params)
+        # Usar parámetros del config si están disponibles
+        if config and 'logit' in config:
+            logit_cfg = config['logit']
+            max_iter = logit_cfg.get('max_iter', 1000)
+            random_state = logit_cfg.get('random_state', random_state)
+            if model_params is None:
+                model_params = {}
+            model_params.update({
+                'max_iter': max_iter,
+                'random_state': random_state
+            })
+        else:
+            if model_params is None:
+                model_params = {}
+            model_params.setdefault('max_iter', 1000)
+            
+        model = LogisticRegression(**model_params)
         pipeline = Pipeline([
             ('preprocessor', preprocessor),
             ('classifier', model)
@@ -211,13 +228,14 @@ class ModelingEngine:
 
     @staticmethod
     def fit_gaussian_nb_predict(
-            df,
-            num_cols,
-            cat_cols,
-            target='flg_target',
-            test_size=0.3,
-            random_state=42,
-            model_params=None,
+        df,
+        num_cols,
+        cat_cols,
+        target='flg_target',
+        test_size=0.3,
+        random_state=42,
+        model_params=None,
+        config=None,
             show_confusion=True,
             standardize_numeric=True,
             verbose=False,
@@ -248,6 +266,14 @@ class ModelingEngine:
             ('cat', cat_pipeline, cat_cols)
         ])
 
+        # Usar parámetros del config si están disponibles
+        if config and 'gnb' in config:
+            gnb_cfg = config['gnb']
+            var_smoothing = float(gnb_cfg.get('var_smoothing', 1e-9))
+            if model_params is None:
+                model_params = {}
+            model_params['var_smoothing'] = var_smoothing
+            
         clf = GaussianNB(**model_params)
         pipeline = Pipeline([
             ('preprocessor', preprocessor),
@@ -504,13 +530,14 @@ class ModelingEngine:
 
     @staticmethod
     def fit_linear_svm_predict(
-            df,
-            num_cols,
-            cat_cols,
-            target='flg_target',
-            test_size=0.3,
-            random_state=42,
-            model_params=None,
+        df,
+        num_cols,
+        cat_cols,
+        target='flg_target',
+        test_size=0.3,
+        random_state=42,
+        model_params=None,
+        config=None,
             show_confusion=True,
             standardize_numeric=True,
             verbose=False,
@@ -629,9 +656,10 @@ class ModelingEngine:
             search_space=None,
             verbose=False,
             save_confusion_path=None,
+            config=None,
             title_suffix=None,
-            max_train_samples=100000,
-            max_test_samples=100000
+            max_train_samples=None,
+            max_test_samples=None
         ):
         """
         Smart search SIN CV (solo split train/test) para Linear SVM.
@@ -667,13 +695,13 @@ class ModelingEngine:
             X, y, test_size=test_size, random_state=random_state, stratify=y
         )
 
-        # Muestreo para acelerar
-        if len(X_train) > max_train_samples:
+        # Muestreo para acelerar (solo si se especifica un límite)
+        if max_train_samples is not None and len(X_train) > max_train_samples:
             rs = np.random.RandomState(random_state)
             idx = rs.choice(len(X_train), size=max_train_samples, replace=False)
             X_train = X_train.iloc[idx]
             y_train = y_train.iloc[idx]
-        if len(X_test) > max_test_samples:
+        if max_test_samples is not None and len(X_test) > max_test_samples:
             rs = np.random.RandomState(random_state + 1)
             idx = rs.choice(len(X_test), size=max_test_samples, replace=False)
             X_test = X_test.iloc[idx]
@@ -789,6 +817,7 @@ class ModelingEngine:
             show_confusion=True,
             standardize_numeric=True,
             verbose=False,
+            config=None,
             save_confusion_path=None,
             title_suffix=None
         ):
@@ -812,13 +841,33 @@ class ModelingEngine:
             ('cat', cat_pipeline, cat_cols)
         ])
 
-        # Parámetros por defecto razonables para dataset grande
-        default_params = dict(
-            hidden_layer_sizes=(64, 32), activation='relu', solver='adam',
-            alpha=1e-4, batch_size='auto', learning_rate='adaptive',
-            max_iter=50, early_stopping=True, n_iter_no_change=5,
-            random_state=random_state, verbose=False
-        )
+        # Usar parámetros del config si están disponibles
+        if config and 'mlp' in config:
+            mlp_cfg = config['mlp']
+            default_params = dict(
+                hidden_layer_sizes=tuple(mlp_cfg.get('hidden_layer_sizes', [64, 32])),
+                activation=mlp_cfg.get('activation', 'relu'),
+                solver=mlp_cfg.get('solver', 'adam'),
+                alpha=mlp_cfg.get('alpha', 1e-4),
+                batch_size=mlp_cfg.get('batch_size', 'auto'),
+                learning_rate=mlp_cfg.get('learning_rate', 'adaptive'),
+                max_iter=mlp_cfg.get('max_iter', 50),
+                early_stopping=mlp_cfg.get('early_stopping', True),
+                n_iter_no_change=mlp_cfg.get('n_iter_no_change', 5),
+                random_state=mlp_cfg.get('random_state', random_state),
+                verbose=False
+            )
+        else:
+            # Parámetros por defecto razonables para dataset grande
+            default_params = dict(
+                hidden_layer_sizes=(64, 32), activation='relu', solver='adam',
+                alpha=1e-4, batch_size='auto', learning_rate='adaptive',
+                max_iter=50, early_stopping=True, n_iter_no_change=5,
+                random_state=random_state, verbose=False
+            )
+        
+        if model_params is None:
+            model_params = {}
         default_params.update(model_params)
         clf = MLPClassifier(**default_params)
 
@@ -906,8 +955,8 @@ class ModelingEngine:
             verbose=False,
             save_confusion_path=None,
             title_suffix=None,
-            max_train_samples=100000,
-            max_test_samples=100000
+            max_train_samples=None,
+            max_test_samples=None
         ):
         """
         Smart search SIN CV para MLPClassifier con early_stopping, sobre un único split train/test.
@@ -939,13 +988,13 @@ class ModelingEngine:
             X, y, test_size=test_size, random_state=random_state, stratify=y
         )
 
-        # Muestreo
-        if len(X_train) > max_train_samples:
+        # Muestreo (solo si se especifica un límite)
+        if max_train_samples is not None and len(X_train) > max_train_samples:
             rs = np.random.RandomState(random_state)
             idx = rs.choice(len(X_train), size=max_train_samples, replace=False)
             X_train = X_train.iloc[idx]
             y_train = y_train.iloc[idx]
-        if len(X_test) > max_test_samples:
+        if max_test_samples is not None and len(X_test) > max_test_samples:
             rs = np.random.RandomState(random_state + 1)
             idx = rs.choice(len(X_test), size=max_test_samples, replace=False)
             X_test = X_test.iloc[idx]
@@ -1156,8 +1205,8 @@ class ModelingEngine:
             verbose=False,
             save_confusion_path=None,
             title_suffix=None,
-            max_train_samples=50000,
-            max_test_samples=100000
+            max_train_samples=None,
+            max_test_samples=None
         ):
         """
         Smart search SIN CV para SVM RBF (usa decision_function + sigmoide). Muestrea para acelerar.
@@ -1187,13 +1236,13 @@ class ModelingEngine:
             X, y, test_size=test_size, random_state=random_state, stratify=y
         )
 
-        # Muestreo
-        if len(X_train) > max_train_samples:
+        # Muestreo (solo si se especifica un límite)
+        if max_train_samples is not None and len(X_train) > max_train_samples:
             rs = np.random.RandomState(random_state)
             idx = rs.choice(len(X_train), size=max_train_samples, replace=False)
             X_train = X_train.iloc[idx]
             y_train = y_train.iloc[idx]
-        if len(X_test) > max_test_samples:
+        if max_test_samples is not None and len(X_test) > max_test_samples:
             rs = np.random.RandomState(random_state + 1)
             idx = rs.choice(len(X_test), size=max_test_samples, replace=False)
             X_test = X_test.iloc[idx]

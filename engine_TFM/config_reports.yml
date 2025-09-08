@@ -1,0 +1,128 @@
+# Configuración para generación de reportes de modelos entrenados
+# Este archivo controla qué reportes generar sin necesidad de re-entrenar modelos
+
+# Configuración general
+general:
+  base_dir: "."  # Directorio base del proyecto
+  output_dir: "reports"  # Directorio donde guardar reportes
+  images_dir: "imagenes"  # Directorio donde guardar imágenes
+  models_dir: "models"  # Directorio donde están los modelos entrenados
+  verbose: true  # Logging detallado
+
+# Configuración de modelos a analizar
+models:
+  # Modelos LOGIT
+  enable_logit_pca_lda: true
+  enable_logit_anova: true
+  
+  # Modelos GNB
+  enable_gnb_pca_lda: true
+  enable_gnb_anova: true
+  
+  # Modelos SVM
+  enable_svm_linear_pca_lda: true
+  enable_svm_linear_anova: true
+  enable_svm_best_pca_lda: true
+  enable_svm_best_anova: true
+  
+  # Modelos MLP
+  enable_mlp_pca_lda: true
+  enable_mlp_anova: true
+
+# Configuración de reportes
+reports:
+  # Reporte comparativo general
+  enable_comparative_table: true
+  
+  # Reportes individuales por modelo
+  enable_individual_reports: true
+  
+  # Gráficos de rendimiento
+  enable_performance_plots: true
+  
+  # Análisis de sensibilidad
+  enable_sensitivity_analysis: true
+
+# Configuración de análisis de sensibilidad
+sensitivity_analysis:
+  # Variables para análisis de sensibilidad (SOLO las que existen en los datasets)
+  variables:
+    - name: "int_rate"
+      display_name: "Tasa de Interés"
+      step: 2.0
+      min_samples: 100
+  
+  # Configuración general
+  confidence_level: 0.95
+  save_plots: true
+  save_csv: true
+
+# Configuración de gráficos
+plots:
+  # Gráficos de rendimiento
+  enable_roc_curves: true
+  enable_precision_recall_curves: true
+  enable_calibration_plots: true
+  
+  # Gráficos de distribución
+  enable_prediction_distributions: true
+  enable_feature_importance: true
+  
+  # Configuración de estilo
+  figure_size: [12, 8]
+  dpi: 300
+  style: "seaborn-v0_8"
+
+# Configuración de métricas
+metrics:
+  # Métricas principales
+  primary_metrics:
+    - "AUC"
+    - "GINI"
+    - "PR_AUC"
+    - "Brier"
+    - "Accuracy"
+    - "F1_Score"
+    - "Balanced_Accuracy"
+    - "Precision"
+    - "Recall"
+    - "KS"
+  
+  # Métricas adicionales
+  additional_metrics:
+    - "Specificity"
+    - "Sensitivity"
+    - "PPV"
+    - "NPV"
+
+# Configuración de datos
+data:
+  # Archivo de datos original
+  input_csv: "Loan_data.csv"
+  
+  # Configuración del target
+  target_column: "flg_target"
+  status_column: "loan_status"
+  
+  # Estados buenos y malos
+  allowed_status:
+    good:
+      - "Fully Paid"
+      - "Does not meet the credit policy. Status: Fully Paid"
+    bad:
+      - "Charged Off"
+      - "Default"
+      - "Late (31-120 days)"
+      - "Does not meet the credit policy. Status: Charged Off"
+  
+  # Configuración de train/test
+  test_size: 0.3
+  random_state: 42
+  drop_missing_status: true
+
+# Configuración de logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "log_REPORTS.txt"
+  console: true

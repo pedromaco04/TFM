@@ -24,7 +24,7 @@ class Exploracion:
         })
 
     @staticmethod
-    def separar_variables_inteligente(df, target='flg_target', max_unique_cats=20, max_concentration=0.98, protected_variables=None, verbose=True, logger=None):
+    def separar_variables_inteligente(df, target='flg_target', max_unique_cats=20, max_concentration=0.98, protected_variables=None, verbose=True, logger=None, config=None):
         """
         Separación inteligente de variables basada en contenido real, no solo tipos pandas.
 
@@ -115,9 +115,11 @@ class Exploracion:
                 # Solo convertir si TODOS los valores son números reales (no códigos/letras)
                 try:
                     # Verificar si contiene letras o valores no numéricos
-                    sample_values = valores_no_nulos.head(100).astype(str)
+                    sample_size = config.get('separation', {}).get('sample_size_for_analysis', 100) if config else 100
+                    max_code_length = config.get('separation', {}).get('max_code_length', 10) if config else 10
+                    sample_values = valores_no_nulos.head(sample_size).astype(str)
                     contiene_letras = any(any(c.isalpha() for c in str(val)) for val in sample_values)
-                    contiene_codigos = any(len(str(val)) > 10 for val in sample_values)  # Probablemente códigos largos
+                    contiene_codigos = any(len(str(val)) > max_code_length for val in sample_values)  # Probablemente códigos largos
 
                     if not contiene_letras and not contiene_codigos:
                         numeric_series = pd.to_numeric(valores_no_nulos, errors='coerce')
@@ -242,11 +244,16 @@ class Exploracion:
         return Exploracion.separar_variables_inteligente(df, target, verbose=False)
 
     @staticmethod
-    def resumen_numericas(df, num_cols):
+    def resumen_numericas(df, num_cols, config=None):
         """
         Devuelve un DataFrame resumen estadístico extendido de las variables numéricas.
         """
-        resumen = df[num_cols].describe([0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99]).T
+        # Usar percentiles del config si está disponible
+        if config and 'separation' in config and 'statistical_percentiles' in config['separation']:
+            percentiles = config['separation']['statistical_percentiles']
+        else:
+            percentiles = [0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99]  # Default
+        resumen = df[num_cols].describe(percentiles).T
         resumen['pcrt_nulos'] = df[num_cols].isnull().mean().round(3)
         resumen['rango'] = resumen['max'] - resumen['min']
         resumen['CV'] = np.abs(resumen['std'].astype(float) / resumen['mean'].astype(float)).round(3)
@@ -254,7 +261,7 @@ class Exploracion:
 
 class SelectVarsCategoricals:
     @staticmethod
-    def chi_square_test(df, cat_cols, target='flg_target', threshold=0.05, verbose=True, logger=None):
+    def chi_square_test(df, cat_cols, target='flg_target', threshold=0.05, verbose=True, logger=None, config=None):
         """
         Realiza test de Chi-cuadrado para cada variable categórica vs target.
         Devuelve lista de variables que pasan el test estadístico.
@@ -310,7 +317,7 @@ class SelectVarsCategoricals:
         return selected_vars
 
     @staticmethod
-    def calculate_woe_iv(df, cat_cols, target='flg_target', verbose=True, logger=None):
+    def calculate_woe_iv(df, cat_cols, target='flg_target', verbose=True, logger=None, config=None):
         """
         Calcula Weight of Evidence (WOE) e Information Value (IV) para variables categóricas.
         Devuelve ranking de variables por poder predictivo.
@@ -366,7 +373,7 @@ class SelectVarsCategoricals:
             woe_iv_results[col] = {
                 'woe_values': woe_dict,
                 'iv': iv,
-                'iv_category': SelectVarsCategoricals._categorize_iv(iv)
+                'iv_category': SelectVarsCategoricals._categorize_iv(iv, config)
             }
 
             if verbose:
@@ -384,21 +391,35 @@ class SelectVarsCategoricals:
         return woe_iv_results, ranking
 
     @staticmethod
-    def _categorize_iv(iv_value):
+    def _categorize_iv(iv_value, config=None):
         """Categoriza el Information Value según estándares de la industria."""
-        if iv_value < 0.02:
+        # Usar umbrales del config si está disponible
+        if config and 'categorical_selection' in config and 'iv_categories' in config['categorical_selection']:
+            categories = config['categorical_selection']['iv_categories']
+            no_predictive = categories.get('no_predictive', 0.02)
+            weak = categories.get('weak', 0.1)
+            medium = categories.get('medium', 0.3)
+            strong = categories.get('strong', 0.5)
+        else:
+            # Valores por defecto
+            no_predictive = 0.02
+            weak = 0.1
+            medium = 0.3
+            strong = 0.5
+            
+        if iv_value < no_predictive:
             return "No predictiva"
-        elif iv_value < 0.1:
+        elif iv_value < weak:
             return "Débil"
-        elif iv_value < 0.3:
+        elif iv_value < medium:
             return "Media"
-        elif iv_value < 0.5:
+        elif iv_value < strong:
             return "Fuerte"
         else:
             return "Muy fuerte"
 
     @staticmethod
-    def select_categorical_variables(df, cat_cols, target='flg_target', iv_threshold=0.1, verbose=True, logger=None):
+    def select_categorical_variables(df, cat_cols, target='flg_target', iv_threshold=0.1, verbose=True, logger=None, config=None):
         """
         Pipeline completo de selección de variables categóricas.
         Combina Chi-square + WOE/IV para selección robusta.
@@ -417,12 +438,12 @@ class SelectVarsCategoricals:
         # Paso 1: Chi-square test
         if verbose:
             log_message(f"\\nPASO 1: Chi-square Test")
-        chi_selected = SelectVarsCategoricals.chi_square_test(df, cat_cols, target, verbose=verbose, logger=logger)
+        chi_selected = SelectVarsCategoricals.chi_square_test(df, cat_cols, target, verbose=verbose, logger=logger, config=config)
 
         # Paso 2: WOE/IV Analysis
         if verbose:
             log_message(f"\\nPASO 2: WOE/IV Analysis")
-        woe_iv_results, ranking = SelectVarsCategoricals.calculate_woe_iv(df, chi_selected, target, verbose=verbose, logger=logger)
+        woe_iv_results, ranking = SelectVarsCategoricals.calculate_woe_iv(df, chi_selected, target, verbose=verbose, logger=logger, config=config)
 
         # Paso 3: Selección final por IV
         final_selected = []
@@ -446,7 +467,7 @@ class SelectVarsCategoricals:
         return final_selected, woe_iv_results, ranking
 
     @staticmethod
-    def convert_categorical_to_woe(df, selected_cat_vars, woe_iv_results, target='flg_target', verbose=True, logger=None):
+    def convert_categorical_to_woe(df, selected_cat_vars, woe_iv_results, target='flg_target', verbose=True, logger=None, config=None):
         """
         Convierte variables categóricas seleccionadas a WOE (numéricas).
         
@@ -501,7 +522,7 @@ class SelectVarsCategoricals:
 
 class SelectVarsNumerics:
     @staticmethod
-    def filtrar_por_nulos(df, resumen, target='flg_target', umbral=0.5, rescatar=False, min_corr=0.1, min_samples=30, logger=None):
+    def filtrar_por_nulos(df, resumen, target='flg_target', umbral=0.5, rescatar=False, min_corr=0.1, min_samples=30, logger=None, config=None):
         """
         Filtra variables con % nulos > umbral. Si rescatar=True, rescata las que superan min_corr con el target.
         Imprime el proceso y devuelve la lista final de variables.
@@ -525,7 +546,7 @@ class SelectVarsNumerics:
         return vars_final
 
     @staticmethod
-    def filtrar_por_cv(df, resumen, target='flg_target', umbral=0.1, rescatar=False, min_corr=0.1, min_samples=30, logger=None):
+    def filtrar_por_cv(df, resumen, target='flg_target', umbral=0.1, rescatar=False, min_corr=0.1, min_samples=30, logger=None, config=None):
         """
         Filtra variables con CV <= umbral. Si rescatar=True, rescata las que superan min_corr con el target.
         Imprime el proceso y devuelve la lista final de variables.
@@ -549,7 +570,7 @@ class SelectVarsNumerics:
         return vars_final
 
     @staticmethod
-    def pca_con_grafico(df, num_cols, plot_variance: bool = True, verbose: bool = True):
+    def pca_con_grafico(df, num_cols, plot_variance: bool = True, verbose: bool = True, config=None):
         if verbose:
             # Información detallada solo en log (manejo desde TFM_EDA.py)
             pass
@@ -567,7 +588,7 @@ class SelectVarsNumerics:
         return pca, varianza_acumulada
 
     @staticmethod
-    def pca_lda_importancia(df, num_cols, target='flg_target', n_pca_components=10, umbral_importancia=0.1, plot_graph=False, verbose: bool = True):
+    def pca_lda_importancia(df, num_cols, target='flg_target', n_pca_components=10, umbral_importancia=0.1, plot_graph=False, verbose: bool = True, config=None):
         # Información detallada solo en log (manejo desde TFM_EDA.py)
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(df[num_cols].fillna(df[num_cols].median()))
@@ -589,7 +610,7 @@ class SelectVarsNumerics:
         return seleccionadas, df_importancia
 
     @staticmethod
-    def anova_feature_selection(df, num_cols, target='flg_target', min_f_score=None, max_p_value=0.05, top_n=None, verbose: bool = True):
+    def anova_feature_selection(df, num_cols, target='flg_target', min_f_score=None, max_p_value=0.05, top_n=None, verbose: bool = True, config=None):
         """
         Selecciona variables numéricas usando ANOVA F-test. Permite filtrar por f_score mínimo, p_value máximo o top_n.
         Imprime el resumen y devuelve la lista de variables seleccionadas y el DataFrame de scores.
@@ -606,7 +627,7 @@ class SelectVarsNumerics:
         return seleccionadas['variable'].tolist(), df_anova
 
     @staticmethod
-    def correlacion_feature_selection(df, num_cols, target='flg_target', threshold=0.6, plot_heatmap=True, verbose: bool = True):
+    def correlacion_feature_selection(df, num_cols, target='flg_target', threshold=0.6, plot_heatmap=True, verbose: bool = True, config=None):
         """
         Selecciona variables menos redundantes usando matriz de correlación y grafo.
         Grafica el heatmap si plot_heatmap=True.

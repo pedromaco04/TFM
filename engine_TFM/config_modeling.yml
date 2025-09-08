@@ -13,7 +13,6 @@ models:
 execution:
   run_training: true
   run_plots: false
-  run_sensitivity: false  # Sensibilidad simulada APAGADA
   run_comparator: true
 
 # Configuración de datos
@@ -25,27 +24,65 @@ data:
 sensitivity:
   max_rows: 50000
 
+# Configuración de análisis de sensibilidad
+sensitivity_analysis:
+  enable_real_sensitivity: true
+  step: 2.0
+  min_samples: 100
+  confidence_level: 0.95
+
+# Configuración LOGIT
+logit:
+  max_iter: 1000
+  random_state: 42
+
+# Configuración GNB
+gnb:
+  var_smoothing: 0.000000001  # 1e-9 como float
+  search_grid: [-12, -6, 20]  # logspace(-12, -6, 20)
+
 # Configuración SVM Lineal
 svm_linear:
-  max_train_samples: 100000
-  max_test_samples: 100000
+  max_train_samples: null     # Sin límite - usar todo el dataset
+  max_test_samples: null      # Sin límite - usar todo el dataset
   tol: 0.001
   max_iter: 3000
+  random_state: 42
+
+# Configuración SVM Lineal Smart Search
+svm_linear_smart:
+  max_train_samples: null     # Sin límite - usar todo el dataset
+  max_test_samples: null      # Sin límite - usar todo el dataset
+  tol: 0.001
+  max_iter: 3000
+  random_state: 42
+  search_space:
+    C: [-2, 2, 5]             # logspace(-2, 2, 5)
+    loss: ['squared_hinge']
 
 # Configuración SVM RBF
 svm_rbf:
-  max_train_samples: 50000
-  max_test_samples: 100000
+  max_train_samples: null     # Sin límite - usar todo el dataset
+  max_test_samples: null      # Sin límite - usar todo el dataset
   tol: 0.001
   max_iter: 2000
   cache_size: 500
+  random_state: 42
 
 # Configuración MLP
 mlp:
-  max_train_samples: 100000
-  max_test_samples: 100000
+  max_train_samples: null     # Sin límite - usar todo el dataset
+  max_test_samples: null      # Sin límite - usar todo el dataset
   max_iter: 50
   n_iter_no_change: 5
+  random_state: 42
+  hidden_layer_sizes: [64, 32]
+  activation: 'relu'
+  solver: 'adam'
+  alpha: 0.0001
+  batch_size: 'auto'
+  learning_rate: 'adaptive'
+  early_stopping: true
 
 # Configuración de logging
 logging:
