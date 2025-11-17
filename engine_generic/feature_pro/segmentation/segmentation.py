@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.tree import DecisionTreeRegressor, plot_tree
+from sklearn.tree import DecisionTreeRegressor, plot_tree, _tree
 
 
 def build_regression_tree_segments(
@@ -69,6 +69,9 @@ def build_regression_tree_segments(
     leaf_ids = model.apply(X_filled)
     leaf_series = pd.Series(leaf_ids, index=work.index, name="leaf_id")
 
+    # Extraer reglas del árbol
+    leaf_rules = extract_tree_rules(model, features)
+
     # Construir segment_id (posible fusión de hojas)
     if merge_leaves:
         seg_series = leaf_series.map(lambda lid: merge_leaves.get(lid, lid))
@@ -76,15 +79,38 @@ def build_regression_tree_segments(
         seg_series = leaf_series.copy()
         seg_series.name = "segment_id"
 
-    # Resumen por segmento
-    summ = (
-        pd.DataFrame({target: y, "segment_id": seg_series})
+    # Resumen por segmento (con leaf_id original)
+    summ_raw = (
+        pd.DataFrame({target: y, "segment_id": seg_series, "leaf_id": leaf_series})
         .groupby("segment_id")
-        .agg(n=(target, "size"), mean_target=(target, "mean"), std_target=(target, "std"))
+        .agg(n=(target, "size"), mean_target=(target, "mean"), std_target=(target, "std"), leaf_id=("leaf_id", "first"))
         .reset_index()
         .sort_values("mean_target", ascending=False)
         .reset_index(drop=True)
     )
+    
+    # Renumerar clusters secuencialmente (1, 2, 3, ...)
+    # Crear mapeo de segment_id original -> nuevo cluster_id secuencial
+    unique_segments = summ_raw['segment_id'].unique()
+    segment_to_cluster = {old_id: new_id for new_id, old_id in enumerate(unique_segments, start=1)}
+    
+    # Aplicar renumeración
+    seg_series_renumbered = seg_series.map(segment_to_cluster)
+    seg_series_renumbered.name = "segment_id"
+    
+    # Actualizar resumen con nuevos IDs
+    summ = summ_raw.copy()
+    summ['cluster_id'] = summ['segment_id'].map(segment_to_cluster)
+    summ = summ.sort_values('cluster_id').reset_index(drop=True)
+    summ = summ[['cluster_id', 'n', 'mean_target', 'std_target', 'leaf_id', 'segment_id']]
+    
+    # Construir diccionario de reglas por cluster_id
+    cluster_rules = {}
+    for _, row in summ.iterrows():
+        cluster_id = row['cluster_id']
+        leaf_id = row['leaf_id']
+        rule = leaf_rules.get(leaf_id, "Regla no encontrada")
+        cluster_rules[cluster_id] = rule
 
     fig = None
     if plot and return_fig:
@@ -104,10 +130,62 @@ def build_regression_tree_segments(
     return {
         "model": model,
         "leaf_id": leaf_series,
-        "segment_id": seg_series,
+        "segment_id": seg_series_renumbered,  # IDs renumerados secuencialmente
+        "segment_id_original": seg_series,  # IDs originales (por si se necesitan)
         "summary": summ,
+        "rules": cluster_rules,  # Reglas por cluster_id
+        "leaf_rules": leaf_rules,  # Reglas por leaf_id original
+        "segment_to_cluster": segment_to_cluster,  # Mapeo original -> nuevo
         "figure": fig,
     }
+
+
+def extract_tree_rules(
+    model: DecisionTreeRegressor,
+    feature_names: Union[List[str], Tuple[str, ...]],
+) -> Dict[int, str]:
+    """
+    Extrae las reglas de decisión para cada hoja del árbol.
+    
+    Args:
+        model: DecisionTreeRegressor entrenado
+        feature_names: nombres de las features en el mismo orden que X
+    
+    Returns:
+        Dict con {leaf_id: regla_texto} donde regla_texto describe las condiciones
+        que llevan a esa hoja.
+    """
+    tree = model.tree_
+    feature_names_list = list(feature_names)
+    rules = {}
+    
+    def recurse(node, depth, parent_conditions):
+        """Recorre el árbol recursivamente para construir reglas."""
+        if tree.children_left[node] == tree.children_right[node]:  # Es hoja
+            leaf_id = node
+            # Construir la regla completa desde la raíz hasta esta hoja
+            if parent_conditions:
+                rule = " Y ".join(parent_conditions)
+            else:
+                rule = "Todas las observaciones"
+            rules[leaf_id] = rule
+        else:
+            # Nodo interno
+            feature = feature_names_list[tree.feature[node]]
+            threshold = tree.threshold[node]
+            
+            # Condición para hijo izquierdo (<=)
+            left_condition = f"{feature} <= {threshold:.4f}"
+            left_conditions = parent_conditions + [left_condition]
+            recurse(tree.children_left[node], depth + 1, left_conditions)
+            
+            # Condición para hijo derecho (>)
+            right_condition = f"{feature} > {threshold:.4f}"
+            right_conditions = parent_conditions + [right_condition]
+            recurse(tree.children_right[node], depth + 1, right_conditions)
+    
+    recurse(0, 0, [])
+    return rules
 
 
 def compute_tree_feature_importance(
@@ -230,6 +308,7 @@ def transform_with_preprocessor(
 ) -> pd.DataFrame:
     """
     Aplica el preprocesador a un DataFrame:
+      - Conversión de columnas numéricas a float (robusta)
       - Imputación (global o por grupo)
       - Winsorización (si fue ajustada)
     No modifica el DataFrame original (retorna copia).
@@ -238,6 +317,11 @@ def transform_with_preprocessor(
     cols = preprocessor.get("numeric_columns", [])
     imp = preprocessor.get("impute", {})
     wins = preprocessor.get("winsor", {})
+
+    # Conversión a float de columnas numéricas declaradas
+    for c in cols:
+        if c in result.columns:
+            result[c] = pd.to_numeric(result[c], errors="coerce").astype(float)
 
     # Imputación
     groupby = imp.get("groupby", None)
@@ -345,10 +429,17 @@ def apply_segmentation_pipeline(
     leaf_ids = model.apply(X)
     leaf_series = pd.Series(leaf_ids, index=df.index, name="leaf_id")
     if merge_leaves:
-        seg_series = leaf_series.map(lambda lid: merge_leaves.get(lid, lid)).rename("segment_id")
+        seg_series = leaf_series.map(lambda lid: merge_leaves.get(lid, lid))
     else:
-        seg_series = leaf_series.rename("segment_id")
+        seg_series = leaf_series.copy()
+        seg_series.name = "segment_id"
+    
+    # Renumerar clusters secuencialmente (1, 2, 3, ...)
+    unique_segments = seg_series.unique()
+    segment_to_cluster = {old_id: new_id for new_id, old_id in enumerate(sorted(unique_segments), start=1)}
+    seg_series_renumbered = seg_series.map(segment_to_cluster)
+    seg_series_renumbered.name = "segment_id"
 
-    return {"segment_id": seg_series, "leaf_id": leaf_series}
+    return {"segment_id": seg_series_renumbered, "leaf_id": leaf_series}
 
 
