@@ -32,6 +32,11 @@ from .selection.categorical_selection import (
 from .segmentation.segmentation import (
     build_regression_tree_segments,
     compute_tree_feature_importance,
+    fit_numeric_preprocessor,
+    transform_with_preprocessor,
+    save_segmentation_pipeline,
+    load_segmentation_pipeline,
+    apply_segmentation_pipeline,
 )
 
 __all__ = [
@@ -52,6 +57,11 @@ __all__ = [
     # segmentation
     "build_regression_tree_segments",
     "compute_tree_feature_importance",
+    "fit_numeric_preprocessor",
+    "transform_with_preprocessor",
+    "save_segmentation_pipeline",
+    "load_segmentation_pipeline",
+    "apply_segmentation_pipeline",
     # selection
     "pca_lda_importance",
     "select_by_correlation_graph",
