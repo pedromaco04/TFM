@@ -46,6 +46,16 @@ def main():
     df = read_dataset(data_path, fmt='csv', logger=logger)
     logger.info(f"Dataset shape: {df.shape}")
 
+    # 1.1) Eliminar columnas que contengan "_id" o "_type"
+    print("== Eliminando columnas *_id y *_type ==")
+    id_type_cols = [c for c in df.columns if ('_id' in c) or ('_type' in c)]
+    if id_type_cols:
+        df = df.drop(columns=id_type_cols)
+        logger.info(f"Columnas removidas por patrón *_id|*_type ({len(id_type_cols)}): {id_type_cols}")
+        logger.info(f"Shape tras remover *_id|*_type: {df.shape}")
+    else:
+        logger.info("No se encontraron columnas que coincidan con *_id o *_type.")
+
     # 2) Eliminar variables con >60% nulos
     print("== Eliminando variables con > 60% nulos ==")
     miss = summarize_missing(df)
@@ -64,6 +74,11 @@ def main():
     if not num_cols:
         logger.error("No se detectaron variables numéricas. Abortando.")
         return
+
+    # 3.1) Convertir las columnas numéricas detectadas a float antes de cualquier operación matemática (simple)
+    print("== Convirtiendo numéricas a float ==")
+    df[num_cols] = df[num_cols].copy().astype(float)
+    logger.info(f"Columnas convertidas a float: {num_cols}")
 
     # 4) Imputar medianas por grupos de 'segmento' (si existe), solo para numéricas
     print("== Imputando medianas por 'segmento' ==")

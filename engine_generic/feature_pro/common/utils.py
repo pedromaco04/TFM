@@ -132,16 +132,17 @@ def detect_column_types(
     object_numeric_threshold: float = 0.95,
 ) -> Tuple[List[str], List[str]]:
     """
-    Identifica columnas numéricas y categóricas, considerando objetos que representan números.
+    Identifica columnas numéricas y categóricas con reglas simples:
+      - Si la columna es datetime, se ignora (no se devuelve en ninguna lista).
+      - Si todos los valores no nulos pueden convertirse a float, se considera NUMÉRICA.
+      - En caso contrario, se considera CATEGÓRICA.
     Args:
         df: DataFrame
         columns: columnas a evaluar (si None, todas)
-        treat_object_numeric: intenta convertir 'object' numéricos a numérico real
-        sample_size_for_analysis: tamaño de muestra para validar patrones de strings
-        max_code_length: longitud máxima para detectar códigos (no continuos)
-        object_numeric_threshold: si treat_object_numeric=True, umbral mínimo (0-1)
-            de fracción de valores no nulos convertibles a numérico para considerar la
-            columna 'object' como numérica (default 0.95)
+        treat_object_numeric: ignorado en esta versión simplificada (mantenido por compatibilidad)
+        sample_size_for_analysis: ignorado (compatibilidad)
+        max_code_length: ignorado (compatibilidad)
+        object_numeric_threshold: ignorado (compatibilidad)
     Returns:
         (numeric_cols, categorical_cols)
     """
@@ -151,24 +152,25 @@ def detect_column_types(
 
     for col in cols:
         series = df[col]
+        # Ignorar columnas datetime
+        if pd.api.types.is_datetime64_any_dtype(series):
+            continue
+
+        # Si ya es numérica: entra como numérica
         if pd.api.types.is_numeric_dtype(series):
             numeric_cols.append(col)
             continue
 
-        if treat_object_numeric and pd.api.types.is_object_dtype(series):
-            non_null = series.dropna()
-            if non_null.empty:
-                categorical_cols.append(col)
-                continue
-            sample = non_null.astype(str).head(sample_size_for_analysis)
-            contains_letters = any(any(ch.isalpha() for ch in val) for val in sample)
-            looks_like_code = any(len(str(val)) > max_code_length for val in sample)
-            if not contains_letters and not looks_like_code:
-                coerced = pd.to_numeric(non_null, errors='coerce')
-                frac_numeric = coerced.notna().mean()
-                if frac_numeric >= object_numeric_threshold:
-                    numeric_cols.append(col)
-                    continue
+        # Para object/string: si TODOS los no nulos son convertibles a float, es numérica
+        non_null = series.dropna()
+        if len(non_null) == 0:
+            # sin evidencia; tratar como categórica por defecto
+            categorical_cols.append(col)
+            continue
+        coerced = pd.to_numeric(non_null, errors='coerce')
+        if coerced.notna().all():
+            numeric_cols.append(col)
+            continue
 
         categorical_cols.append(col)
 
