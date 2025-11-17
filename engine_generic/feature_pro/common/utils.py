@@ -129,6 +129,7 @@ def detect_column_types(
     treat_object_numeric: bool = True,
     sample_size_for_analysis: int = 100,
     max_code_length: int = 10,
+    object_numeric_threshold: float = 0.95,
 ) -> Tuple[List[str], List[str]]:
     """
     Identifica columnas numéricas y categóricas, considerando objetos que representan números.
@@ -138,6 +139,9 @@ def detect_column_types(
         treat_object_numeric: intenta convertir 'object' numéricos a numérico real
         sample_size_for_analysis: tamaño de muestra para validar patrones de strings
         max_code_length: longitud máxima para detectar códigos (no continuos)
+        object_numeric_threshold: si treat_object_numeric=True, umbral mínimo (0-1)
+            de fracción de valores no nulos convertibles a numérico para considerar la
+            columna 'object' como numérica (default 0.95)
     Returns:
         (numeric_cols, categorical_cols)
     """
@@ -161,7 +165,8 @@ def detect_column_types(
             looks_like_code = any(len(str(val)) > max_code_length for val in sample)
             if not contains_letters and not looks_like_code:
                 coerced = pd.to_numeric(non_null, errors='coerce')
-                if coerced.notna().all():
+                frac_numeric = coerced.notna().mean()
+                if frac_numeric >= object_numeric_threshold:
                     numeric_cols.append(col)
                     continue
 

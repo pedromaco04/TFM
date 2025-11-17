@@ -56,7 +56,7 @@ def main():
     df = df[keep_cols].copy()
     logger.info(f"Shape tras filtro de nulos: {df.shape}")
 
-    # 3) Trabajar solo con numéricas
+    # 3) Trabajar solo con numéricas (detección robusta incorporada en detect_column_types)
     print("== Preparando variables numéricas ==")
     num_cols, cat_cols = detect_column_types(df)
     logger.info(f"Numéricas detectadas ({len(num_cols)}): {num_cols}")
