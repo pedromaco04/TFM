@@ -7,21 +7,29 @@ from scipy import stats
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-# Plotting is optional; figures can be returned to ser guardados por el usuario
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-except Exception:  # pragma: no cover
-    plt = None
-    sns = None
+
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def _log(logger: Optional[logging.Logger], message: str) -> None:
+    """
+    Envía mensajes al logger si está disponible.
+    Args:
+        logger: instancia de logging.Logger o None
+        message: texto a registrar
+    """
     if logger is not None:
         logger.info(message)
 
 
 def _ensure_list(columns: Optional[Union[str, Iterable[str]]], all_columns: List[str]) -> List[str]:
+    """
+    Asegura que la entrada 'columns' sea una lista de nombres de columnas válida.
+    - Si es None, devuelve todas las columnas.
+    - Si es str, devuelve [str].
+    - Si es iterable, filtra solo columnas presentes en all_columns.
+    """
     if columns is None:
         return list(all_columns)
     if isinstance(columns, str):
@@ -29,17 +37,78 @@ def _ensure_list(columns: Optional[Union[str, Iterable[str]]], all_columns: List
     return [c for c in columns if c in all_columns]
 
 
+def read_dataset(
+    path: str,
+    fmt: Optional[str] = 'auto',
+    sep: Optional[str] = None,
+    encoding: Optional[str] = None,
+    dtype_backend: Optional[str] = 'numpy_nullable',
+    low_memory: bool = False,
+    sheet_name: Union[int, str, None] = 0,
+    logger: Optional[logging.Logger] = None,
+) -> pd.DataFrame:
+    """
+    Lector genérico de datasets con autodetección de formato por extensión.
+    Args:
+        path: ruta al archivo a leer.
+        fmt: formato del archivo. Soportado: 'auto' | 'csv' | 'parquet' | 'txt' | 'tsv' | 'xlsx'.
+             Si 'auto', se infiere desde la extensión del archivo.
+        sep: separador para archivos de texto (csv/txt/tsv). Si None, usa ',' para csv/txt y '\\t' para tsv.
+        encoding: codificación de texto para lectores basados en csv/txt/tsv.
+        dtype_backend: backend de tipos para pandas (p.ej. 'numpy_nullable').
+        low_memory: parámetro de pandas para csv; optimiza memoria a costa de tipos provisionales.
+        sheet_name: nombre o índice de hoja para xlsx/xls.
+        logger: logger opcional donde enviar mensajes.
+    Returns:
+        DataFrame leído desde el archivo.
+    Raises:
+        ValueError: si el formato no está soportado.
+    """
+    _log(logger, f"Leyendo dataset desde: {path} (fmt={fmt})")
+    fmt_resolved = fmt
+    if fmt_resolved is None or fmt_resolved == 'auto':
+        lower = path.lower()
+        if lower.endswith('.csv'):
+            fmt_resolved = 'csv'
+        elif lower.endswith('.parquet') or lower.endswith('.pq'):
+            fmt_resolved = 'parquet'
+        elif lower.endswith('.tsv'):
+            fmt_resolved = 'tsv'
+        elif lower.endswith('.txt'):
+            fmt_resolved = 'txt'
+        elif lower.endswith('.xlsx') or lower.endswith('.xls'):
+            fmt_resolved = 'xlsx'
+        else:
+            fmt_resolved = 'csv'  # por defecto
+
+    if fmt_resolved == 'csv':
+        df = pd.read_csv(path, sep=sep if sep is not None else ',', encoding=encoding, low_memory=low_memory, dtype_backend=dtype_backend)
+    elif fmt_resolved == 'parquet':
+        df = pd.read_parquet(path)
+    elif fmt_resolved == 'tsv':
+        df = pd.read_csv(path, sep='\t' if sep is None else sep, encoding=encoding, low_memory=low_memory, dtype_backend=dtype_backend)
+    elif fmt_resolved == 'txt':
+        df = pd.read_csv(path, sep=sep if sep is not None else ',', encoding=encoding, low_memory=low_memory, dtype_backend=dtype_backend)
+    elif fmt_resolved == 'xlsx':
+        df = pd.read_excel(path, sheet_name=sheet_name)
+    else:
+        raise ValueError(f"Formato no soportado: {fmt_resolved}")
+
+    _log(logger, f"Dataset leído. Shape: {df.shape}")
+    return df
+
+
 def summarize_missing(
     df: pd.DataFrame,
     columns: Optional[Union[str, Iterable[str]]] = None,
 ) -> pd.DataFrame:
     """
-    Devuelve un DataFrame resumen con conteo y porcentaje de missings por columna.
+    Genera una tabla resumen con conteo y porcentaje de valores faltantes por columna.
     Args:
         df: DataFrame a analizar
-        columns: Columnas a incluir (si None, toma todas)
+        columns: subconjunto de columnas (si None, usa todas)
     Returns:
-        DataFrame con columnas: ['column', 'dtype', 'num_missing', 'pct_missing']
+        DataFrame con columnas ['column','dtype','num_missing','pct_missing']
     """
     cols = _ensure_list(columns, df.columns.tolist())
     subset = df[cols]
@@ -62,15 +131,15 @@ def detect_column_types(
     max_code_length: int = 10,
 ) -> Tuple[List[str], List[str]]:
     """
-    Identifica columnas numéricas y categóricas, incluso si numéricas están como 'object'.
+    Identifica columnas numéricas y categóricas, considerando objetos que representan números.
     Args:
-        df: DataFrame fuente
-        columns: subconjunto opcional de columnas a analizar
-        treat_object_numeric: si True, intenta convertir objetos numéricos a numérico
-        sample_size_for_analysis: tamaño de muestra para validar patrones de string numéricos
-        max_code_length: si un valor excede, se asume código identificador (no numérico continuo)
+        df: DataFrame
+        columns: columnas a evaluar (si None, todas)
+        treat_object_numeric: intenta convertir 'object' numéricos a numérico real
+        sample_size_for_analysis: tamaño de muestra para validar patrones de strings
+        max_code_length: longitud máxima para detectar códigos (no continuos)
     Returns:
-        (numeric_columns, categorical_columns)
+        (numeric_cols, categorical_cols)
     """
     cols = _ensure_list(columns, df.columns.tolist())
     numeric_cols: List[str] = []
@@ -85,20 +154,17 @@ def detect_column_types(
         if treat_object_numeric and pd.api.types.is_object_dtype(series):
             non_null = series.dropna()
             if non_null.empty:
-                # Vacía → tratar como categórica
                 categorical_cols.append(col)
                 continue
             sample = non_null.astype(str).head(sample_size_for_analysis)
             contains_letters = any(any(ch.isalpha() for ch in val) for val in sample)
             looks_like_code = any(len(str(val)) > max_code_length for val in sample)
             if not contains_letters and not looks_like_code:
-                # Probar conversión estricta
                 coerced = pd.to_numeric(non_null, errors='coerce')
                 if coerced.notna().all():
                     numeric_cols.append(col)
                     continue
 
-        # Por defecto: categórica
         categorical_cols.append(col)
 
     return numeric_cols, categorical_cols
@@ -113,20 +179,21 @@ def impute_missing(
     logger: Optional[logging.Logger] = None,
 ) -> pd.DataFrame:
     """
-    Imputa valores faltantes de forma genérica. Soporta imputación con groupby.
-    Estrategias soportadas (para columnas numéricas):
-      - 'mean' | 'median' | 'zero' | 'constant'
-    Para 'constant' use fill_value. En columnas no numéricas, 'zero', 'mean' y 'median'
-    no aplican; para ellas use 'constant' o llene por fuera.
+    Imputa valores faltantes de forma genérica, con opción de agrupación.
+    Estrategias soportadas:
+      - 'mean', 'median' (numéricas)
+      - 'mode' (moda; útil para categóricas o numéricas)
+      - 'zero' (rellena con 0)
+      - 'constant' (usa fill_value)
     Args:
-        df: DataFrame de entrada
-        columns: columnas a imputar (por defecto detecta numéricas)
+        df: DataFrame
+        columns: columnas a imputar (si None, detecta numéricas)
         strategy: estrategia de imputación
-        fill_value: valor a usar si strategy='constant'
-        groupby: columna(s) para imputación por grupo (opcional)
-        logger: logger para enviar mensajes al log (no imprime a consola)
+        fill_value: valor para 'constant'
+        groupby: columna(s) para imputación por grupos (opcional)
+        logger: logger opcional
     Returns:
-        DataFrame con imputación aplicada (copia)
+        DataFrame con imputación aplicada
     """
     result = df.copy()
     if columns is None:
@@ -139,7 +206,13 @@ def impute_missing(
             return s.fillna(0)
         if strategy == 'constant':
             return s.fillna(fill_value)
-        # mean / median solo tienen sentido numéricamente
+        if strategy == 'mode':
+            # Moda por serie/grupo; si múltiples, toma la primera
+            mode_vals = s.mode(dropna=True)
+            if mode_vals.empty:
+                return s
+            mode_val = mode_vals.iloc[0]
+            return s.fillna(mode_val)
         if not pd.api.types.is_numeric_dtype(s):
             return s if strategy not in ('mean', 'median') else s
         if strategy == 'mean':
@@ -167,24 +240,34 @@ def winsorize_by_percentile(
     lower: float = 0.01,
     upper: float = 0.99,
     logger: Optional[logging.Logger] = None,
-) -> pd.DataFrame:
+    return_percentiles: bool = False,
+) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame]]:
     """
-    Winsorización por percentiles; recorta por debajo de 'lower' y por encima de 'upper'.
+    Winsorización por percentiles: recorta valores por debajo/encima de [lower, upper].
     Args:
         df: DataFrame
         columns: columnas numéricas a winsorizar
         lower: percentil inferior (0-1)
         upper: percentil superior (0-1)
+        logger: logger opcional
+        return_percentiles: si True, devuelve (df_wins, df_percentiles)
+    Returns:
+        DataFrame winsorizado o tupla con percentiles por columna
     """
     cols = _ensure_list(columns, df.columns.tolist())
     result = df.copy()
     _log(logger, f"Winsorizando por percentiles columnas={len(cols)} lower={lower} upper={upper}")
+    percentiles_data: List[Tuple[str, float, float]] = []
     for col in cols:
         if not pd.api.types.is_numeric_dtype(result[col]):
             continue
         q_low = result[col].quantile(lower)
         q_hi = result[col].quantile(upper)
         result[col] = result[col].clip(lower=q_low, upper=q_hi)
+        percentiles_data.append((col, float(q_low) if pd.notna(q_low) else np.nan, float(q_hi) if pd.notna(q_hi) else np.nan))
+    if return_percentiles:
+        perc_df = pd.DataFrame(percentiles_data, columns=['column', f'Q{int(lower*100)}', f'Q{int(upper*100)}'])
+        return result, perc_df
     return result
 
 
@@ -195,11 +278,12 @@ def winsorize_by_iqr(
     logger: Optional[logging.Logger] = None,
 ) -> pd.DataFrame:
     """
-    Winsorización por IQR; recorta a [Q1 - factor*IQR, Q3 + factor*IQR].
+    Winsorización por IQR: recorta a [Q1 - factor*IQR, Q3 + factor*IQR].
     Args:
         df: DataFrame
-        columns: columnas numéricas a winsorizar
+        columns: columnas numéricas a procesar
         factor: multiplicador del IQR
+        logger: logger opcional
     """
     cols = _ensure_list(columns, df.columns.tolist())
     result = df.copy()
@@ -216,110 +300,14 @@ def winsorize_by_iqr(
     return result
 
 
-def coefficient_of_variation(
-    df: pd.DataFrame,
-    columns: Optional[Union[str, Iterable[str]]] = None,
-) -> pd.DataFrame:
-    """
-    Calcula el coeficiente de variación (CV = |std/mean|) por columna.
-    Args:
-        df: DataFrame
-        columns: columnas a evaluar (por defecto, numéricas detectadas)
-    Returns:
-        DataFrame con ['column', 'cv']
-    """
-    if columns is None:
-        cols, _ = detect_column_types(df)
-    else:
-        cols = _ensure_list(columns, df.columns.tolist())
-    data = []
-    for col in cols:
-        s = df[col]
-        if not pd.api.types.is_numeric_dtype(s):
-            continue
-        mean = s.mean()
-        std = s.std()
-        cv = np.nan if mean == 0 or pd.isna(mean) else abs(float(std) / float(mean))
-        data.append((col, cv))
-    return pd.DataFrame(data, columns=['column', 'cv']).sort_values('cv', ascending=True).reset_index(drop=True)
-
-
-def _plot_variance_curve(cum_var: np.ndarray, title: str = "Varianza acumulada PCA"):
-    if plt is None or sns is None:
-        return None
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.plot(np.arange(1, len(cum_var) + 1), cum_var, marker='o')
-    ax.set_xlabel("Número de componentes")
-    ax.set_ylabel("Varianza acumulada")
-    ax.set_ylim(0, 1.01)
-    ax.grid(True, alpha=0.3)
-    ax.set_title(title)
-    return fig
-
-
-def compute_pca(
-    df: pd.DataFrame,
-    columns: Union[str, Iterable[str]],
-    n_components: Optional[int] = None,
-    variance_threshold: Optional[float] = None,
-    scale: bool = True,
-    plot: bool = False,
-    return_fig: bool = True,
-    random_state: Optional[int] = None,
-) -> Dict[str, Union[int, np.ndarray, PCA, Optional['plt.Figure']]]:
-    """
-    Calcula PCA genérico. Permite:
-      - fijar n_components, o
-      - calcular n para alcanzar variance_threshold (p.ej. 0.95)
-      - opcionalmente escalar (StandardScaler)
-      - opcionalmente devolver figura del gráfico de varianza acumulada
-    Returns:
-      dict con:
-        'pca': objeto PCA ajustado
-        'n_components': int usado
-        'explained_variance_ratio': np.ndarray
-        'cumulative_variance': np.ndarray
-        'figure': figura (opcional)
-    """
-    cols = _ensure_list(columns, df.columns.tolist())
-    X = df[cols].copy()
-    X = X.fillna(X.median(numeric_only=True))
-    if scale:
-        X = StandardScaler().fit_transform(X)
-    else:
-        X = X.values
-
-    # Si se pide variance_threshold, primero PCA completo para estimar n
-    pca_full = PCA(random_state=random_state)
-    pca_full.fit(X)
-    cum_var = pca_full.explained_variance_ratio_.cumsum()
-    chosen_n = n_components
-    if variance_threshold is not None:
-        if not (0 < variance_threshold <= 1):
-            raise ValueError("variance_threshold debe estar en (0, 1].")
-        chosen_n = int(np.argmax(cum_var >= variance_threshold) + 1)
-        chosen_n = max(1, chosen_n)
-    if chosen_n is None:
-        chosen_n = min(10, X.shape[1])  # default conservador
-
-    pca = PCA(n_components=chosen_n, random_state=random_state)
-    pca.fit(X)
-    cum_var_chosen = pca_full.explained_variance_ratio_.cumsum()  # curva completa
-
-    fig = _plot_variance_curve(cum_var_chosen) if plot and return_fig else None
-    return {
-        'pca': pca,
-        'n_components': chosen_n,
-        'explained_variance_ratio': pca.explained_variance_ratio_,
-        'cumulative_variance': cum_var_chosen,
-        'figure': fig,
-    }
-
-
-# ------------------------- Correlaciones avanzadas -------------------------
-
 def _cramers_v(conf_mat: pd.DataFrame) -> float:
-    """Calcula Cramér's V a partir de una tabla de contingencia."""
+    """
+    Cramér's V para asociación entre dos variables categóricas.
+    Args:
+        conf_mat: tabla de contingencia (DataFrame)
+    Returns:
+        Valor de Cramér's V en [0,1]
+    """
     chi2 = stats.chi2_contingency(conf_mat)[0]
     n = conf_mat.values.sum()
     r, k = conf_mat.shape
@@ -328,9 +316,12 @@ def _cramers_v(conf_mat: pd.DataFrame) -> float:
 
 def _correlation_ratio(categories: np.ndarray, measurements: np.ndarray) -> float:
     """
-    Correlation Ratio (eta) para categórica vs numérica.
-    categories: array-like categórico
-    measurements: array-like numérico
+    Correlation Ratio (eta) entre categórica y numérica.
+    Args:
+        categories: array-like categórico
+        measurements: array-like numérico
+    Returns:
+        Eta en [0,1]
     """
     cats = pd.Categorical(categories)
     y = pd.Series(measurements).astype(float)
@@ -345,12 +336,18 @@ def _correlation_ratio(categories: np.ndarray, measurements: np.ndarray) -> floa
 
 
 def _point_biserial_safe(x: np.ndarray, y: np.ndarray) -> float:
-    """Point-biserial para binaria vs numérica (manejo robusto si y no es estrictamente 0/1)."""
+    """
+    Point-biserial para numérica vs binaria, con validaciones mínimas.
+    Args:
+        x: array-like numérico
+        y: array-like binario (0/1)
+    Returns:
+        Coeficiente de correlación point-biserial o NaN
+    """
     y_bin = pd.Series(y).dropna()
     if y_bin.nunique() != 2:
         return np.nan
     s = pd.Series(x).dropna()
-    # Alinear índices
     common = y_bin.index.intersection(s.index)
     if len(common) < 3:
         return np.nan
@@ -367,31 +364,25 @@ def compute_correlation_matrix(
     logger: Optional[logging.Logger] = None,
 ) -> Dict[str, Union[pd.DataFrame, Optional['plt.Figure']]]:
     """
-    Calcula una matriz de correlaciones flexible.
+    Calcula una matriz de correlación flexible.
     Métodos:
-      - 'pearson' (solo numéricas)
-      - 'spearman' (solo numéricas)
-      - 'kendall' (solo numéricas)
-      - 'auto' (mixto): 
-           num-num: pearson
-           cat-cat: Cramér's V
-           cat-num: correlation ratio (eta)
+      - 'pearson' | 'spearman' | 'kendall' (solo numéricas)
+      - 'auto' mixto: num-num (pearson), cat-cat (Cramér's V), cat-num (eta)
     Args:
         df: DataFrame
-        columns: subconjunto de columnas (por defecto todas)
-        method: ver arriba
-        plot: si True, genera heatmap (devuelto como figura)
-        return_fig: si True, retorna la figura en el dict de salida
-        logger: logger para mensajes
+        columns: columnas a evaluar (si None, todas)
+        method: método de correlación
+        plot: si True, genera heatmap
+        return_fig: si True, retorna la figura
+        logger: logger opcional
     Returns:
-        {'matrix': DataFrame, 'figure': Optional[Figure]}
+        dict con {'matrix': DataFrame, 'figure': Optional[Figure]}
     """
     cols = _ensure_list(columns, df.columns.tolist())
     if method in ('pearson', 'spearman', 'kendall'):
         num_cols = [c for c in cols if pd.api.types.is_numeric_dtype(df[c])]
         mat = df[num_cols].corr(method=method)
     else:
-        # modo 'auto' mixto
         num_cols, cat_cols = detect_column_types(df, columns=cols)
         mat = pd.DataFrame(index=cols, columns=cols, dtype=float)
         for i, ci in enumerate(cols):
@@ -401,14 +392,12 @@ def compute_correlation_matrix(
                 if ci == cj:
                     mat.loc[ci, cj] = 1.0
                     continue
-                # Casos
                 if (ci in num_cols) and (cj in num_cols):
                     r = df[[ci, cj]].corr(method='pearson').iloc[0, 1]
                 elif (ci in cat_cols) and (cj in cat_cols):
                     cont = pd.crosstab(df[ci], df[cj])
                     r = _cramers_v(cont) if cont.size > 0 else np.nan
                 else:
-                    # mixto
                     if ci in cat_cols and cj in num_cols:
                         r = _correlation_ratio(df[ci].values, df[cj].values)
                     else:
