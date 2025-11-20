@@ -1,0 +1,30 @@
+# Ignorar archivos CSV
+*.csv
+
+# Ignorar archivos PNG
+*.png
+
+# Ignorar los parquet
+*.pyc
+*__pycache__*
+__pycache__/
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+
+# Archivos generados por Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+*.egg
+*.md
+test_*
+*.log

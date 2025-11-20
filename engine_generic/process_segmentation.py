@@ -33,8 +33,13 @@ def setup_logger(log_file: str) -> logging.Logger:
 
 
 def main():
+    # ===== CONFIGURACIÓN =====
+    # Columna objetivo para la segmentación (cambiar aquí si se usa otra columna)
+    TARGET_COLUMN = 'tasa'
+    # ==========================
+    
     # Paths
-    data_path = 's3://ada-us-east-1-sbx-live-pe-intc-data/01DataAnalytics/01Pricing/07.DepositoPlazo/01.Universo/universo_bot_cotiza_vars_comport_v4'
+    data_path = 's3://ada-us-east-1-sbx-live-pe-intc-data/01DataAnalytics/01Pricing/07.DepositoPlazo/01.Universo/universo_bot_cotiza_vars_comport_v4_backup'
     log_path = os.path.join(os.path.dirname(__file__), 'process_segmentation.log')
     graphs_dir = os.path.join(os.path.dirname(__file__), 'segmentation_graphs')
     os.makedirs(graphs_dir, exist_ok=True)
@@ -42,6 +47,7 @@ def main():
 
     logger = setup_logger(log_path)
     logger.info("== INICIO SEGMENTATION ==")
+    logger.info(f"Columna objetivo: {TARGET_COLUMN}")
 
     # 1) Leer dataset
     print("== Leyendo dataset ==")
@@ -92,26 +98,26 @@ def main():
     df[num_cols] = impute_missing(df, columns=num_cols, strategy='median', groupby=group_col)[num_cols]
     logger.info("Imputación por medianas completada.")
 
-    # 5) Árbol de regresión para segmentación (target='tasa')
-    print("== Entrenando árbol de regresión para segmentación (target='tasa') ==")
-    if 'tasa' not in df.columns:
-        logger.error("Columna objetivo 'tasa' no encontrada en el dataset. Abortando.")
+    # 5) Árbol de regresión para segmentación
+    print(f"== Entrenando árbol de regresión para segmentación (target='{TARGET_COLUMN}') ==")
+    if TARGET_COLUMN not in df.columns:
+        logger.error(f"Columna objetivo '{TARGET_COLUMN}' no encontrada en el dataset. Abortando.")
         return
 
     # Features iniciales: unas cuantas variables numéricas (priorizando 'variable_*' hasta 20)
-    #candidate_vars = [c for c in num_cols if c.startswith('variable_') and c != 'tasa']
+    #candidate_vars = [c for c in num_cols if c.startswith('variable_') and c != TARGET_COLUMN]
     #if not candidate_vars:
-    candidate_vars = [c for c in num_cols if c != 'tasa']
+    candidate_vars = [c for c in num_cols if c != TARGET_COLUMN]
     features = candidate_vars #[:20] if len(candidate_vars) > 20 else candidate_vars
     if not features:
-        logger.error("No hay variables numéricas (excluyendo 'tasa') para entrenar el árbol.")
+        logger.error(f"No hay variables numéricas (excluyendo '{TARGET_COLUMN}') para entrenar el árbol.")
         return
     logger.info(f"Features iniciales para el árbol ({len(features)}): {features}")
 
     seg_out = build_regression_tree_segments(
         df=df,
         features=features,
-        target='tasa',
+        target=TARGET_COLUMN,
         max_depth=4,
         min_samples_leaf=7000,
         random_state=42,
@@ -129,12 +135,12 @@ def main():
     for _, row in summary.iterrows():
         cluster_id = int(row['cluster_id'])
         n = int(row['n'])
-        mean_tasa = row['mean_target']
-        std_tasa = row['std_target']
+        mean_target = row['mean_target']
+        std_target = row['std_target']
         rule = rules.get(cluster_id, "Regla no encontrada")
         logger.info(f"\nCluster {cluster_id}:")
         logger.info(f"  - N observaciones: {n}")
-        logger.info(f"  - Tasa promedio: {mean_tasa:.4f} (std: {std_tasa:.4f})")
+        logger.info(f"  - {TARGET_COLUMN} promedio: {mean_target:.4f} (std: {std_target:.4f})")
         logger.info(f"  - Regla: {rule}")
     logger.info("=" * 50)
 
@@ -167,18 +173,18 @@ def main():
     df_work[selected_features] = impute_missing(
         df_work, columns=selected_features, strategy='median', groupby=seg_col
     )[selected_features]
-    # Añadir 'tasa' para reentrenar árbol
-    if 'tasa' not in df_fresh.columns:
-        logger.error("Columna objetivo 'tasa' no encontrada al re-leer el dataset. Abortando.")
+    # Añadir columna objetivo para reentrenar árbol
+    if TARGET_COLUMN not in df_fresh.columns:
+        logger.error(f"Columna objetivo '{TARGET_COLUMN}' no encontrada al re-leer el dataset. Abortando.")
         return
     df_train = df_work.copy()
-    df_train['tasa'] = df_fresh['tasa']
+    df_train[TARGET_COLUMN] = df_fresh[TARGET_COLUMN]
 
     # Reentrenar árbol con selected_features
     seg_out_refit = build_regression_tree_segments(
         df=df_train,
         features=selected_features,
-        target='tasa',
+        target=TARGET_COLUMN,
         max_depth=4,
         min_samples_leaf=7000,
         random_state=42,
@@ -196,12 +202,12 @@ def main():
     for _, row in summary_refit.iterrows():
         cluster_id = int(row['cluster_id'])
         n = int(row['n'])
-        mean_tasa = row['mean_target']
-        std_tasa = row['std_target']
+        mean_target = row['mean_target']
+        std_target = row['std_target']
         rule = rules_refit.get(cluster_id, "Regla no encontrada")
         logger.info(f"\nCluster {cluster_id}:")
         logger.info(f"  - N observaciones: {n}")
-        logger.info(f"  - Tasa promedio: {mean_tasa:.4f} (std: {std_tasa:.4f})")
+        logger.info(f"  - {TARGET_COLUMN} promedio: {mean_target:.4f} (std: {std_target:.4f})")
         logger.info(f"  - Regla: {rule}")
     logger.info("=" * 50)
     
@@ -237,7 +243,7 @@ def main():
             # Actualizar summary con clusters fusionados
             # Necesitamos mantener el leaf_id para las reglas
             df_summary = pd.DataFrame({
-                'tasa': df_train['tasa'], 
+                TARGET_COLUMN: df_train[TARGET_COLUMN], 
                 'segment_id': seg_out_refit['segment_id'],
                 'leaf_id': seg_out_refit['leaf_id']
             })
@@ -245,9 +251,9 @@ def main():
                 df_summary
                 .groupby('segment_id')
                 .agg(
-                    n=('tasa', 'size'), 
-                    mean_target=('tasa', 'mean'), 
-                    std_target=('tasa', 'std'),
+                    n=(TARGET_COLUMN, 'size'), 
+                    mean_target=(TARGET_COLUMN, 'mean'), 
+                    std_target=(TARGET_COLUMN, 'std'),
                     leaf_id=('leaf_id', 'first')  # Tomar el primer leaf_id del grupo
                 )
                 .reset_index()
@@ -299,42 +305,37 @@ def main():
     )
     df_scored = df_apply.copy()
     df_scored['cluster'] = applied['segment_id']
-    out_scored = 's3://ada-us-east-1-sbx-live-pe-intc-data/01DataAnalytics/01Pricing/07.DepositoPlazo/01.Universo/universo_bot_cotiza_vars_comport_v4'
+    out_scored = 's3://ada-us-east-1-sbx-live-pe-intc-data/01DataAnalytics/01Pricing/07.DepositoPlazo/01.Universo/universo_bot_cotiza_vars_clusterizado.csv'
     df_scored.to_csv(out_scored, index=False)
     logger.info(f"Base clusterizada guardada en: {out_scored}")
 
-    # 7.2) Gráficos de distribución de tasa por cluster: Violin y KDE
-    print("== Graficando tasa por cluster (violin y KDE) ==")
+    # 7.2) Gráficos de distribución de la variable objetivo por cluster: Violin y KDE
+    print(f"== Graficando {TARGET_COLUMN} por cluster (violin y KDE) ==")
+    df_scored[TARGET_COLUMN] = df_scored[TARGET_COLUMN].astype(float)
     try:
-        # Violin: eje y = tasa, eje x = cluster
+        # Violin: eje y = variable objetivo, eje x = cluster
         fig_v, ax_v = plt.subplots(figsize=(10, max(4, df_scored['cluster'].nunique() * 0.5)))
-        sns.violinplot(data=df_scored, x='cluster', y='tasa', inner='quartile', cut=0, ax=ax_v)
+        sns.violinplot(data=df_scored, y=TARGET_COLUMN, hue='cluster', ax=ax_v)
         ax_v.set_title('Distribución de tasa por cluster (Violin)')
         fig_v.tight_layout()
-        out_violin = os.path.join(graphs_dir, 'violin_tasa_by_cluster.png')
+        out_violin = os.path.join(graphs_dir, f'violin_{TARGET_COLUMN}_by_cluster.png')
         fig_v.savefig(out_violin, dpi=150, bbox_inches='tight')
         plt.close(fig_v)
         logger.info(f"Gráfico violin guardado en: {out_violin}")
 
-        # KDE: hue = cluster, x = tasa
+        # KDE: hue = cluster, x = variable objetivo
         fig_k, ax_k = plt.subplots(figsize=(10, 5))
-        sns.kdeplot(data=df_scored, x='tasa', hue='cluster', common_norm=False, fill=True, alpha=0.25, ax=ax_k)
-        ax_k.set_title('Distribución de tasa por cluster (KDE)')
+        sns.kdeplot(data=df_scored, x=TARGET_COLUMN, hue='cluster', common_norm=False, fill=True, alpha=0.25, ax=ax_k)
+        ax_k.set_title(f'Distribución de {TARGET_COLUMN} por cluster (KDE)')
         fig_k.tight_layout()
-        out_kde = os.path.join(graphs_dir, 'kde_tasa_by_cluster.png')
+        out_kde = os.path.join(graphs_dir, f'kde_{TARGET_COLUMN}_by_cluster.png')
         fig_k.savefig(out_kde, dpi=150, bbox_inches='tight')
         plt.close(fig_k)
         logger.info(f"Gráfico KDE guardado en: {out_kde}")
     except Exception as e:
         logger.warning(f"No se pudieron generar los gráficos de distribución: {e}")
 
-    # Guardar asignaciones de segmento (opcional)
-    assignments = pd.DataFrame({
-        'cluster_id': seg_out_refit['segment_id']  # Usar los clusters del refit final
-    })
-    out_assign = os.path.join(os.path.dirname(__file__), 'segments_assignment.csv')
-    assignments.to_csv(out_assign, index=True, index_label='row_id')
-    logger.info(f"Asignación de segmentos guardada en: {out_assign}")
+   
 
     logger.info("== FIN SEGMENTATION ==")
     print("== Proceso de Segmentación completado. Ver log y gráficos generados. ==")

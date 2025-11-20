@@ -15,6 +15,11 @@ from .common.utils import (
     winsorize_by_percentile,
     winsorize_by_iqr,
     compute_correlation_matrix,
+    apply_standard_scaler,
+    fit_standard_scaler,
+    plot_kde_by_hue,
+    plot_categorical_target_mean,
+    convert_to_logarithm,
 )
 
 from .selection.numeric_selection import (
@@ -48,6 +53,11 @@ __all__ = [
     "winsorize_by_percentile",
     "winsorize_by_iqr",
     "compute_correlation_matrix",
+    "apply_standard_scaler",
+    "fit_standard_scaler",
+    "plot_kde_by_hue",
+    "plot_categorical_target_mean",
+    "convert_to_logarithm",
     "compute_pca",
     "compute_psi",
     "coefficient_of_variation",

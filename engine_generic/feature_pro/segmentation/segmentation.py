@@ -247,6 +247,9 @@ def fit_numeric_preprocessor(
           - 'winsor': {'enabled', 'lower','upper','quantiles': mapping}
     """
     cols = [c for c in numeric_columns if c in df.columns]
+    if cols:
+        df = df.copy()
+        df[cols] = df[cols].astype(float)
     impute_values: Dict[str, Any] = {}
     if groupby is None:
         impute_values["__global__"] = {}
